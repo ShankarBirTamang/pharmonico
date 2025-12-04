@@ -1,0 +1,80 @@
+services:
+  # MongoDB Service - Business data (prescriptions, patients, pharmacies)
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+  # PostgreSQL Service - Job queue and audit logs
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=pharmonico
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+  # MinIO Service - S3-compatible object storage
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+  # MinIO Bucket Initialization
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/pharmonico --ignore-existing;
+      mc anonymous set download myminio/pharmonico;
+      exit 0;
+      "
+    networks:
+      - pharmonico-network
+
+volumes:
+  mongodb-data:
+  postgres-data:
+  minio-data:
+
+networks:
+  pharmonico-network:
+    driver: bridge
+
