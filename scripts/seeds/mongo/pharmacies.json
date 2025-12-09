@@ -1,0 +1,105 @@
+[
+  {
+    "ncpdp_id": "1234567",
+    "name": "CVS Pharmacy #1234",
+    "address": {
+      "street": "123 Main Street",
+      "city": "Boston",
+      "state": "MA",
+      "zip": "02101"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [-71.0589, 42.3601]
+    },
+    "phone": "617-555-0100",
+    "fax": "617-555-0101",
+    "email": "store1234@cvs.com",
+    "hours": {
+      "monday": "8:00 AM - 9:00 PM",
+      "tuesday": "8:00 AM - 9:00 PM",
+      "wednesday": "8:00 AM - 9:00 PM",
+      "thursday": "8:00 AM - 9:00 PM",
+      "friday": "8:00 AM - 9:00 PM",
+      "saturday": "9:00 AM - 6:00 PM",
+      "sunday": "10:00 AM - 6:00 PM"
+    },
+    "capacity": {
+      "max_prescriptions_per_day": 150,
+      "current_daily_count": 0
+    },
+    "services": ["prescription_filling", "immunizations", "health_screenings"],
+    "active": true,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "ncpdp_id": "2345678",
+    "name": "Walgreens Pharmacy #5678",
+    "address": {
+      "street": "456 Oak Avenue",
+      "city": "Cambridge",
+      "state": "MA",
+      "zip": "02139"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [-71.1077, 42.3736]
+    },
+    "phone": "617-555-0200",
+    "fax": "617-555-0201",
+    "email": "store5678@walgreens.com",
+    "hours": {
+      "monday": "8:00 AM - 10:00 PM",
+      "tuesday": "8:00 AM - 10:00 PM",
+      "wednesday": "8:00 AM - 10:00 PM",
+      "thursday": "8:00 AM - 10:00 PM",
+      "friday": "8:00 AM - 10:00 PM",
+      "saturday": "9:00 AM - 7:00 PM",
+      "sunday": "10:00 AM - 7:00 PM"
+    },
+    "capacity": {
+      "max_prescriptions_per_day": 200,
+      "current_daily_count": 0
+    },
+    "services": ["prescription_filling", "immunizations", "health_screenings", "photo_services"],
+    "active": true,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "ncpdp_id": "3456789",
+    "name": "Rite Aid Pharmacy #9012",
+    "address": {
+      "street": "789 Elm Street",
+      "city": "Somerville",
+      "state": "MA",
+      "zip": "02144"
+    },
+    "location": {
+      "type": "Point",
+      "coordinates": [-71.0995, 42.3876]
+    },
+    "phone": "617-555-0300",
+    "fax": "617-555-0301",
+    "email": "store9012@riteaid.com",
+    "hours": {
+      "monday": "7:00 AM - 9:00 PM",
+      "tuesday": "7:00 AM - 9:00 PM",
+      "wednesday": "7:00 AM - 9:00 PM",
+      "thursday": "7:00 AM - 9:00 PM",
+      "friday": "7:00 AM - 9:00 PM",
+      "saturday": "8:00 AM - 8:00 PM",
+      "sunday": "9:00 AM - 6:00 PM"
+    },
+    "capacity": {
+      "max_prescriptions_per_day": 120,
+      "current_daily_count": 0
+    },
+    "services": ["prescription_filling", "immunizations"],
+    "active": true,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]
+

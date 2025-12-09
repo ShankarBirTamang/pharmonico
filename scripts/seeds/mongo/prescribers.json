@@ -1,0 +1,72 @@
+[
+  {
+    "npi": "1234567890",
+    "name": {
+      "first": "John",
+      "last": "Smith",
+      "middle": "A"
+    },
+    "license_number": "MA123456",
+    "license_state": "MA",
+    "specialty": "Family Medicine",
+    "phone": "617-555-1000",
+    "fax": "617-555-1001",
+    "email": "john.smith@example.com",
+    "address": {
+      "street": "100 Medical Center Drive",
+      "city": "Boston",
+      "state": "MA",
+      "zip": "02115"
+    },
+    "active": true,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "npi": "2345678901",
+    "name": {
+      "first": "Sarah",
+      "last": "Johnson",
+      "middle": "B"
+    },
+    "license_number": "MA234567",
+    "license_state": "MA",
+    "specialty": "Internal Medicine",
+    "phone": "617-555-2000",
+    "fax": "617-555-2001",
+    "email": "sarah.johnson@example.com",
+    "address": {
+      "street": "200 Health Plaza",
+      "city": "Cambridge",
+      "state": "MA",
+      "zip": "02139"
+    },
+    "active": true,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "npi": "3456789012",
+    "name": {
+      "first": "Michael",
+      "last": "Williams",
+      "middle": "C"
+    },
+    "license_number": "MA345678",
+    "license_state": "MA",
+    "specialty": "Cardiology",
+    "phone": "617-555-3000",
+    "fax": "617-555-3001",
+    "email": "michael.williams@example.com",
+    "address": {
+      "street": "300 Heart Center Boulevard",
+      "city": "Somerville",
+      "state": "MA",
+      "zip": "02144"
+    },
+    "active": true,
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]
+

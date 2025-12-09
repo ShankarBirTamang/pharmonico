@@ -1,0 +1,84 @@
+[
+  {
+    "email": "patient1@example.com",
+    "phone": "617-555-4000",
+    "name": {
+      "first": "Alice",
+      "last": "Brown",
+      "middle": "D"
+    },
+    "date_of_birth": "1985-05-15",
+    "address": {
+      "street": "400 Patient Street",
+      "city": "Boston",
+      "state": "MA",
+      "zip": "02101"
+    },
+    "insurance": {
+      "provider": "Blue Cross Blue Shield",
+      "member_id": "BC123456789",
+      "group_number": "GRP001",
+      "rx_bin": "123456",
+      "rx_pcn": "ABC",
+      "rx_group": "RXGRP001"
+    },
+    "enrollment_status": "pending",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "email": "patient2@example.com",
+    "phone": "617-555-5000",
+    "name": {
+      "first": "Bob",
+      "last": "Davis",
+      "middle": "E"
+    },
+    "date_of_birth": "1990-08-22",
+    "address": {
+      "street": "500 Health Avenue",
+      "city": "Cambridge",
+      "state": "MA",
+      "zip": "02139"
+    },
+    "insurance": {
+      "provider": "Aetna",
+      "member_id": "AE987654321",
+      "group_number": "GRP002",
+      "rx_bin": "654321",
+      "rx_pcn": "XYZ",
+      "rx_group": "RXGRP002"
+    },
+    "enrollment_status": "enrolled",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "email": "patient3@example.com",
+    "phone": "617-555-6000",
+    "name": {
+      "first": "Carol",
+      "last": "Miller",
+      "middle": "F"
+    },
+    "date_of_birth": "1978-12-03",
+    "address": {
+      "street": "600 Wellness Road",
+      "city": "Somerville",
+      "state": "MA",
+      "zip": "02144"
+    },
+    "insurance": {
+      "provider": "UnitedHealthcare",
+      "member_id": "UH456789123",
+      "group_number": "GRP003",
+      "rx_bin": "789123",
+      "rx_pcn": "DEF",
+      "rx_group": "RXGRP003"
+    },
+    "enrollment_status": "pending",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]
+
