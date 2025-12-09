@@ -35,7 +35,7 @@ func Load() *Config {
 		MongoDBURI:     getEnv("MONGODB_URI", "mongodb://localhost:27017/pharmonico"),
 		PostgresDSN:    getEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/pharmonico?sslmode=disable"),
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
-		KafkaBrokers:   getEnv("KAFKA_BROKERS", "localhost:9092"),
+		KafkaBrokers:   getEnv("KAFKA_BROKERS", "localhost:29092"),
 		MinIOEndpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),
 		MinIOAccessKey: getEnv("MINIO_ACCESS_KEY", "minioadmin"),
 		MinIOSecretKey: getEnv("MINIO_SECRET_KEY", "minioadmin"),
