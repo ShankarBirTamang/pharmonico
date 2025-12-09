@@ -2,7 +2,7 @@
 -- This table stores audit trail for all important system events
 
 CREATE TABLE IF NOT EXISTS audit_logs (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     event_type VARCHAR(100) NOT NULL,
     entity_type VARCHAR(100) NOT NULL,
     entity_id VARCHAR(255) NOT NULL,
