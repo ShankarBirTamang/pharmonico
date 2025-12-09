@@ -104,3 +104,22 @@ func (rc *RedisClient) Expire(ctx context.Context, key string, expiration time.D
 	return nil
 }
 
+// Increment atomically increments a key's value by 1
+// Returns the new value after increment
+func (rc *RedisClient) Increment(ctx context.Context, key string) (int64, error) {
+	val, err := rc.Client.Incr(ctx, key).Result()
+	if err != nil {
+		return 0, fmt.Errorf("failed to increment key %s: %w", key, err)
+	}
+	return val, nil
+}
+
+// IncrementBy atomically increments a key's value by the specified amount
+// Returns the new value after increment
+func (rc *RedisClient) IncrementBy(ctx context.Context, key string, value int64) (int64, error) {
+	val, err := rc.Client.IncrBy(ctx, key, value).Result()
+	if err != nil {
+		return 0, fmt.Errorf("failed to increment key %s by %d: %w", key, value, err)
+	}
+	return val, nil
+}
