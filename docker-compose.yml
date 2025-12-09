@@ -1,7 +1,17 @@
+# ============================================
+# Pharmonico Docker Compose Configuration
+# Full development environment with hot reload
+# ============================================
+
 services:
-  # MongoDB Service - Business data (prescriptions, patients, pharmacies)
+  # ==========================================
+  # DATABASES
+  # ==========================================
+
+  # MongoDB - Business data (prescriptions, patients, pharmacies)
   mongodb:
     image: mongo:7.0
+    container_name: pharmonico-mongodb
     ports:
       - "27017:27017"
     volumes:
@@ -16,17 +26,19 @@ services:
       - pharmonico-network
     restart: unless-stopped
 
-  # PostgreSQL Service - Job queue and audit logs
+  # PostgreSQL - Job queue, audit logs, users
   postgres:
     image: postgres:16-alpine
+    container_name: pharmonico-postgres
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=pharmonico
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pharmonico
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -37,18 +49,129 @@ services:
       - pharmonico-network
     restart: unless-stopped
 
-  # MinIO Service - S3-compatible object storage
+  # Redis - Caching, sessions, rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: pharmonico-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./infra/docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+  # ==========================================
+  # MESSAGE QUEUE (Kafka with KRaft)
+  # ==========================================
+
+  # Kafka - Event streaming (KRaft mode - no Zookeeper required)
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: pharmonico-kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      # KRaft mode settings
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      
+      # Listeners configuration
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      
+      # Topic and replication settings
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      
+      # Log retention settings
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+      
+      # Log directories for KRaft
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+  # Kafka Topic Initialization
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: pharmonico-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: /bin/bash
+    command: |
+      -c "
+      echo 'Waiting for Kafka to be ready...'
+      sleep 10
+      
+      echo 'Creating Kafka topics...'
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic intake_received --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic validate_prescription --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic validation_completed --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic enrollment_requested --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic enrollment_completed --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic pharmacy_recommendation_requested --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic pharmacy_routed --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic prescription_fulfilled --partitions 3 --replication-factor 1
+      kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic dead_letter_queue --partitions 1 --replication-factor 1
+      
+      echo 'Topics created:'
+      kafka-topics --bootstrap-server kafka:9092 --list
+      "
+    networks:
+      - pharmonico-network
+
+  # ==========================================
+  # OBJECT STORAGE
+  # ==========================================
+
+  # MinIO - S3-compatible storage
   minio:
     image: minio/minio:latest
+    container_name: pharmonico-minio
     ports:
       - "9000:9000"   # API
       - "9001:9001"   # Console
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - minio-data:/data
     command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - pharmonico-network
     restart: unless-stopped
@@ -56,25 +179,144 @@ services:
   # MinIO Bucket Initialization
   minio-init:
     image: minio/mc:latest
+    container_name: pharmonico-minio-init
     depends_on:
       - minio
     entrypoint: >
       /bin/sh -c "
       sleep 5;
       mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      mc mb myminio/pharmonico --ignore-existing;
-      mc anonymous set download myminio/pharmonico;
+      mc mb myminio/insurance-cards --ignore-existing;
+      mc mb myminio/shipping-labels --ignore-existing;
+      mc mb myminio/ncpdp-raw --ignore-existing;
+      echo 'MinIO buckets created successfully';
       exit 0;
       "
     networks:
       - pharmonico-network
 
+  # ==========================================
+  # EMAIL (Development)
+  # ==========================================
+
+  # MailDev - Email testing
+  maildev:
+    image: maildev/maildev:2.1.0
+    container_name: pharmonico-maildev
+    ports:
+      - "1080:1080"   # Web UI
+      - "1025:1025"   # SMTP
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+  # ==========================================
+  # APPLICATION SERVICES (with hot reload)
+  # ==========================================
+
+  # Go API Server (with Air hot reload)
+  api:
+    build:
+      context: ./backend-go
+      dockerfile: Dockerfile.dev
+    container_name: pharmonico-api
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=development
+      - MONGODB_URI=mongodb://mongodb:27017/pharmonico
+      - POSTGRES_DSN=postgres://postgres:postgres@postgres:5432/pharmonico?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9092
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - SMTP_HOST=maildev
+      - SMTP_PORT=1025
+    volumes:
+      - ./backend-go:/app
+      - /app/tmp  # Exclude tmp directory from volume mount
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+  # Worker Service (with Air hot reload)
+  worker:
+    build:
+      context: ./backend-go
+      dockerfile: Dockerfile.dev
+      args:
+        SERVICE: worker
+    container_name: pharmonico-worker
+    environment:
+      - APP_ENV=development
+      - SERVICE=worker
+      - MONGODB_URI=mongodb://mongodb:27017/pharmonico
+      - POSTGRES_DSN=postgres://postgres:postgres@postgres:5432/pharmonico?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9092
+    volumes:
+      - ./backend-go:/app
+      - /app/tmp  # Exclude tmp directory from volume mount
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+  # React Frontend (with Vite hot reload)
+  frontend:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile.dev
+    container_name: pharmonico-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    volumes:
+      - ./frontend-react:/app
+      - /app/node_modules  # Exclude node_modules from volume mount
+    depends_on:
+      - api
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
+# ==========================================
+# VOLUMES
+# ==========================================
 volumes:
   mongodb-data:
+    name: pharmonico-mongodb-data
   postgres-data:
+    name: pharmonico-postgres-data
+  redis-data:
+    name: pharmonico-redis-data
+  kafka-data:
+    name: pharmonico-kafka-data
   minio-data:
+    name: pharmonico-minio-data
 
+# ==========================================
+# NETWORKS
+# ==========================================
 networks:
   pharmonico-network:
+    name: pharmonico-network
     driver: bridge
 

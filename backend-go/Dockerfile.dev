@@ -1,0 +1,44 @@
+# =============================================================================
+# Pharmonico Backend - Development Dockerfile with Air hot reload
+# Supports both API and Worker services via build arg
+# =============================================================================
+
+FROM golang:1.22-alpine
+
+# Install Air for hot reload and git for dependencies
+# Using v1.51.0 with old module path (compatible with Go 1.22)
+RUN go install github.com/cosmtrek/air@v1.51.0 && \
+    apk add --no-cache git ca-certificates tzdata
+
+WORKDIR /app
+
+# Copy go mod files first for better caching
+COPY go.mod go.sum* ./
+RUN go mod download
+
+# Build argument to determine service type (api or worker)
+ARG SERVICE=api
+ENV SERVICE=${SERVICE}
+
+# Copy Air configuration based on service type
+COPY .air.toml ./
+COPY .air.worker.toml ./
+
+# Copy source code
+COPY . .
+
+# Expose ports (API uses 8080, worker doesn't need exposed port)
+EXPOSE 8080
+
+# Create startup script
+RUN echo '#!/bin/sh' > /app/start.sh && \
+    echo 'if [ "$SERVICE" = "worker" ]; then' >> /app/start.sh && \
+    echo '  air -c .air.worker.toml' >> /app/start.sh && \
+    echo 'else' >> /app/start.sh && \
+    echo '  air -c .air.toml' >> /app/start.sh && \
+    echo 'fi' >> /app/start.sh && \
+    chmod +x /app/start.sh
+
+# Use Air for hot reload - select config based on service
+CMD ["/app/start.sh"]
+
