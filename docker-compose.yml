@@ -148,6 +148,24 @@ services:
     networks:
       - pharmonico-network
 
+  # Kafka UI - Web interface for Kafka cluster management
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: pharmonico-kafka-ui
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pharmonico-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: first
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka:8083
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - pharmonico-network
+    restart: unless-stopped
+
   # ==========================================
   # OBJECT STORAGE
   # ==========================================
