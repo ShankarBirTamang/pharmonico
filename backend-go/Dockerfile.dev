@@ -30,15 +30,7 @@ COPY . .
 # Expose ports (API uses 8080, worker doesn't need exposed port)
 EXPOSE 8080
 
-# Create startup script
-RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'if [ "$SERVICE" = "worker" ]; then' >> /app/start.sh && \
-    echo '  air -c .air.worker.toml' >> /app/start.sh && \
-    echo 'else' >> /app/start.sh && \
-    echo '  air -c .air.toml' >> /app/start.sh && \
-    echo 'fi' >> /app/start.sh && \
-    chmod +x /app/start.sh
-
 # Use Air for hot reload - select config based on service
-CMD ["/app/start.sh"]
+# The SERVICE env var is set via build arg and can be overridden at runtime
+CMD sh -c 'if [ "$SERVICE" = "worker" ]; then air -c .air.worker.toml; else air -c .air.toml; fi'
 
