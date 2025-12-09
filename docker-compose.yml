@@ -199,19 +199,27 @@ services:
     image: minio/mc:latest
     container_name: pharmonico-minio-init
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      sleep 5;
-      mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      mc mb myminio/insurance-cards --ignore-existing;
-      mc mb myminio/shipping-labels --ignore-existing;
-      mc mb myminio/ncpdp-raw --ignore-existing;
-      echo 'MinIO buckets created successfully';
+      echo 'Waiting for MinIO to be ready...';
+      until mc alias set myminio http://minio:9000 minioadmin minioadmin 2>/dev/null; do
+        echo 'Waiting for MinIO...';
+        sleep 2;
+      done;
+      echo 'MinIO is ready. Creating buckets...';
+      mc mb myminio/insurance-cards --ignore-existing || echo 'Bucket insurance-cards already exists or creation failed';
+      mc mb myminio/shipping-labels --ignore-existing || echo 'Bucket shipping-labels already exists or creation failed';
+      mc mb myminio/ncpdp-raw --ignore-existing || echo 'Bucket ncpdp-raw already exists or creation failed';
+      echo 'Listing created buckets:';
+      mc ls myminio;
+      echo 'MinIO buckets initialized successfully';
       exit 0;
       "
     networks:
       - pharmonico-network
+    restart: "no"
 
   # ==========================================
   # EMAIL (Development)
