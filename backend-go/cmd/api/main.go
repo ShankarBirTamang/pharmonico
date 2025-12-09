@@ -66,6 +66,19 @@ func main() {
 		log.Println("✅ PostgreSQL migrations completed successfully")
 	}
 
+	// Connect to Redis
+	log.Println("🔌 Connecting to Redis...")
+	redisClient, err := database.ConnectRedis(cfg.RedisURL)
+	if err != nil {
+		log.Fatalf("❌ Failed to connect to Redis: %v", err)
+	}
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("⚠️  Error closing Redis connection: %v", err)
+		}
+	}()
+	log.Println("✅ Redis connected successfully")
+
 	// TODO: Initialize router and start HTTP server
 	log.Println("✅ Database connections established. API server ready to start...")
 
@@ -77,4 +90,3 @@ func main() {
 	<-quit
 	log.Println("🛑 Shutting down API Server gracefully...")
 }
-
