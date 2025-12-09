@@ -20,14 +20,15 @@ echo "✅ Kafka is ready!"
 
 # Define topics
 TOPICS=(
-    "intake_received"
-    "validate_prescription"
-    "validation_completed"
-    "enrollment_requested"
-    "enrollment_completed"
-    "pharmacy_recommendation_requested"
-    "pharmacy_routed"
-    "prescription_fulfilled"
+    "prescription.intake.received"
+    "prescription.validation.completed"
+    "patient.enrollment.completed"
+    "pharmacy.selected"
+    "insurance.adjudication.completed"
+    "payment.link.created"
+    "payment.completed"
+    "shipment.label.created"
+    "shipment.delivered"
     "dead_letter_queue"
 )
 
