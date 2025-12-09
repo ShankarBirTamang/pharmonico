@@ -79,6 +79,8 @@ func main() {
 		"payment_jobs",
 		"shipping_jobs",
 		"tracking_jobs",
+		"job_queue",
+		"dead_letter_queue",
 	}
 
 	for _, tableName := range jobQueueTables {
