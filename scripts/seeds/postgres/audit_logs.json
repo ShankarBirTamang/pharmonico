@@ -1,0 +1,186 @@
+[
+  {
+    "event_type": "prescription_created",
+    "entity_type": "prescription",
+    "entity_id": "RX001",
+    "user_id": "system",
+    "action": "create",
+    "details": {
+      "prescription_number": "RX001",
+      "patient_id": "patient1",
+      "prescriber_npi": "1234567890",
+      "status": "received",
+      "source": "api_intake"
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-API/1.0",
+    "created_at": "2024-01-01T10:00:00Z"
+  },
+  {
+    "event_type": "prescription_validated",
+    "entity_type": "prescription",
+    "entity_id": "RX001",
+    "user_id": "validation_worker",
+    "action": "validate",
+    "details": {
+      "prescription_number": "RX001",
+      "validation_status": "validated",
+      "validated_fields": ["npi", "dea", "ndc"],
+      "validation_errors": []
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-Worker/1.0",
+    "created_at": "2024-01-01T10:05:00Z"
+  },
+  {
+    "event_type": "patient_enrolled",
+    "entity_type": "patient",
+    "entity_id": "patient1",
+    "user_id": "enrollment_worker",
+    "action": "enroll",
+    "details": {
+      "patient_id": "patient1",
+      "enrollment_status": "enrolled",
+      "enrollment_method": "magic_link",
+      "enrolled_at": "2024-01-01T11:00:00Z"
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-Worker/1.0",
+    "created_at": "2024-01-01T11:00:00Z"
+  },
+  {
+    "event_type": "prescription_routed",
+    "entity_type": "prescription",
+    "entity_id": "RX001",
+    "user_id": "routing_worker",
+    "action": "route",
+    "details": {
+      "prescription_number": "RX001",
+      "pharmacy_ncpdp_id": "1234567",
+      "routing_reason": "geographic_proximity",
+      "estimated_delivery": "2024-01-03T14:00:00Z"
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-Worker/1.0",
+    "created_at": "2024-01-01T12:00:00Z"
+  },
+  {
+    "event_type": "prescription_adjudicated",
+    "entity_type": "prescription",
+    "entity_id": "RX001",
+    "user_id": "adjudication_worker",
+    "action": "adjudicate",
+    "details": {
+      "prescription_number": "RX001",
+      "adjudication_status": "approved",
+      "patient_pay": 15.00,
+      "insurance_pay": 35.00,
+      "total_cost": 50.00,
+      "copay_amount": 15.00
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-Worker/1.0",
+    "created_at": "2024-01-01T13:00:00Z"
+  },
+  {
+    "event_type": "payment_processed",
+    "entity_type": "prescription",
+    "entity_id": "RX001",
+    "user_id": "payment_worker",
+    "action": "process_payment",
+    "details": {
+      "prescription_number": "RX001",
+      "payment_status": "paid",
+      "payment_method": "stripe",
+      "amount": 15.00,
+      "transaction_id": "txn_stripe_123456"
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-Worker/1.0",
+    "created_at": "2024-01-01T14:00:00Z"
+  },
+  {
+    "event_type": "prescription_shipped",
+    "entity_type": "prescription",
+    "entity_id": "RX001",
+    "user_id": "shipping_worker",
+    "action": "ship",
+    "details": {
+      "prescription_number": "RX001",
+      "tracking_number": "1Z999AA10123456784",
+      "carrier": "UPS",
+      "shipped_at": "2024-01-02T09:00:00Z"
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-Worker/1.0",
+    "created_at": "2024-01-02T09:00:00Z"
+  },
+  {
+    "event_type": "prescription_delivered",
+    "entity_type": "prescription",
+    "entity_id": "RX001",
+    "user_id": "delivery_worker",
+    "action": "deliver",
+    "details": {
+      "prescription_number": "RX001",
+      "tracking_number": "1Z999AA10123456784",
+      "delivered_at": "2024-01-03T14:30:00Z",
+      "delivery_confirmation": "signed_by_patient"
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-Worker/1.0",
+    "created_at": "2024-01-03T14:30:00Z"
+  },
+  {
+    "event_type": "prescription_created",
+    "entity_type": "prescription",
+    "entity_id": "RX002",
+    "user_id": "system",
+    "action": "create",
+    "details": {
+      "prescription_number": "RX002",
+      "patient_id": "patient2",
+      "prescriber_npi": "2345678901",
+      "status": "received",
+      "source": "api_intake"
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-API/1.0",
+    "created_at": "2024-01-02T10:00:00Z"
+  },
+  {
+    "event_type": "prescription_validation_failed",
+    "entity_type": "prescription",
+    "entity_id": "RX002",
+    "user_id": "validation_worker",
+    "action": "validate",
+    "details": {
+      "prescription_number": "RX002",
+      "validation_status": "validation_failed",
+      "validation_errors": [
+        "Invalid NPI format",
+        "NDC code not found in FDA database"
+      ]
+    },
+    "ip_address": "127.0.0.1",
+    "user_agent": "Pharmonico-Worker/1.0",
+    "created_at": "2024-01-02T10:05:00Z"
+  },
+  {
+    "event_type": "ops_manual_intervention",
+    "entity_type": "prescription",
+    "entity_id": "RX002",
+    "user_id": "ops_agent_001",
+    "action": "manual_review",
+    "details": {
+      "prescription_number": "RX002",
+      "intervention_type": "manual_validation_override",
+      "reason": "Prescriber NPI verified manually via phone call",
+      "resolved_by": "ops_agent_001"
+    },
+    "ip_address": "192.168.1.100",
+    "user_agent": "Mozilla/5.0 (Ops Dashboard)",
+    "created_at": "2024-01-02T11:00:00Z"
+  }
+]
+
