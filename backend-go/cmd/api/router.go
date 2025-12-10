@@ -28,13 +28,22 @@ func (s *Server) setupRouter() *chi.Mux {
 	// 5. Panic recovery - recover from panics
 	r.Use(appMiddleware.RecoveryMiddleware)
 
+	// Create handler dependencies with all injected services
+	deps := handlers.NewDependencies(
+		s.MongoClient,
+		s.Postgres,
+		s.Redis,
+		s.KafkaProducer,
+	)
+
 	// Health check endpoint (outside /api/v1)
-	healthHandler := handlers.NewHealthHandler()
+	healthHandler := handlers.NewHealthHandler(deps)
 	r.Get("/health", healthHandler.GetHealth)
 
 	// API v1 routes
 	r.Route("/api/v1", func(r chi.Router) {
 		// Add v1 routes here
+		// All handlers will have access to deps (MongoDB, PostgreSQL, Redis, Kafka)
 		// Example: r.Get("/prescriptions", prescriptionHandler.List)
 	})
 

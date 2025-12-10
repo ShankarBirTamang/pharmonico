@@ -7,11 +7,15 @@ import (
 )
 
 // HealthHandler handles health check requests
-type HealthHandler struct{}
+type HealthHandler struct {
+	deps *Dependencies
+}
 
 // NewHealthHandler creates a new health handler
-func NewHealthHandler() *HealthHandler {
-	return &HealthHandler{}
+func NewHealthHandler(deps *Dependencies) *HealthHandler {
+	return &HealthHandler{
+		deps: deps,
+	}
 }
 
 // HealthResponse represents the health check response

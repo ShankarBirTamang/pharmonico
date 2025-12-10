@@ -5,19 +5,22 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/pharmonico/backend-gogit/internal/config"
 	"github.com/pharmonico/backend-gogit/internal/database"
+	"github.com/pharmonico/backend-gogit/internal/kafka"
 )
 
 // Server holds all the dependencies for the API server
 type Server struct {
-	Config      *config.Config
-	MongoClient *database.MongoClient
-	Postgres    *database.PostgresClient
-	Redis       *database.RedisClient
-	Router      *http.Server
+	Config        *config.Config
+	MongoClient   *database.MongoClient
+	Postgres      *database.PostgresClient
+	Redis         *database.RedisClient
+	KafkaProducer kafka.Producer
+	Router        *http.Server
 }
 
 // InitializeServer sets up all database connections and returns a configured server
@@ -71,6 +74,17 @@ func InitializeServer(cfg *config.Config) (*Server, error) {
 	server.Redis = redisClient
 	log.Println("✅ Redis connected successfully")
 
+	// Initialize Kafka producer
+	log.Println("🔌 Initializing Kafka producer...")
+	brokers := strings.Split(cfg.KafkaBrokers, ",")
+	for i, broker := range brokers {
+		brokers[i] = strings.TrimSpace(broker)
+	}
+	kafkaConfig := kafka.NewConfig(brokers, "pharmonico-api", "pharmonico-api-producer")
+	kafkaProducer := kafka.NewProducer(kafkaConfig)
+	server.KafkaProducer = kafkaProducer
+	log.Println("✅ Kafka producer initialized successfully")
+
 	// Setup router
 	log.Println("🔧 Setting up router...")
 	router := server.setupRouter()
@@ -118,6 +132,12 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	if s.Redis != nil {
 		if err := s.Redis.Close(); err != nil {
 			log.Printf("⚠️  Error closing Redis connection: %v", err)
+		}
+	}
+
+	if s.KafkaProducer != nil {
+		if err := s.KafkaProducer.Close(); err != nil {
+			log.Printf("⚠️  Error closing Kafka producer: %v", err)
 		}
 	}
 
