@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/pharmonico/backend-gogit/internal/config"
@@ -16,6 +17,7 @@ type Server struct {
 	MongoClient *database.MongoClient
 	Postgres    *database.PostgresClient
 	Redis       *database.RedisClient
+	Router      *http.Server
 }
 
 // InitializeServer sets up all database connections and returns a configured server
@@ -69,12 +71,37 @@ func InitializeServer(cfg *config.Config) (*Server, error) {
 	server.Redis = redisClient
 	log.Println("✅ Redis connected successfully")
 
+	// Setup router
+	log.Println("🔧 Setting up router...")
+	router := server.setupRouter()
+	server.Router = &http.Server{
+		Addr:    ":" + cfg.Port,
+		Handler: router,
+	}
+	log.Println("✅ Router configured successfully")
+
 	return server, nil
 }
 
-// Shutdown gracefully closes all database connections
+// Start starts the HTTP server
+func (s *Server) Start() error {
+	log.Printf("🌐 Starting HTTP server on port %s...", s.Config.Port)
+	if err := s.Router.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
+}
+
+// Shutdown gracefully closes all database connections and stops the HTTP server
 func (s *Server) Shutdown(ctx context.Context) error {
 	log.Println("🛑 Shutting down server connections...")
+
+	// Shutdown HTTP server
+	if s.Router != nil {
+		if err := s.Router.Shutdown(ctx); err != nil {
+			log.Printf("⚠️  Error shutting down HTTP server: %v", err)
+		}
+	}
 
 	if s.MongoClient != nil {
 		if err := s.MongoClient.Disconnect(ctx); err != nil {

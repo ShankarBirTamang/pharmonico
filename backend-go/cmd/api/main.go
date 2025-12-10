@@ -26,22 +26,24 @@ func main() {
 	}
 
 	// Setup graceful shutdown
-	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		if err := server.Shutdown(ctx); err != nil {
-			log.Printf("⚠️  Error during shutdown: %v", err)
-		}
-	}()
-
-	// TODO: Initialize router and start HTTP server (Task 7.2)
-	log.Println("✅ Database connections established. API server ready to start...")
-
-	// Graceful shutdown handling
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Start HTTP server in a goroutine
+	go func() {
+		if err := server.Start(); err != nil {
+			log.Fatalf("❌ Failed to start HTTP server: %v", err)
+		}
+	}()
 
 	log.Println("✅ API Server is running. Press Ctrl+C to stop.")
 	<-quit
 	log.Println("🛑 Shutting down API Server gracefully...")
+
+	// Graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("⚠️  Error during shutdown: %v", err)
+	}
 }
