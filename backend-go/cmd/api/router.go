@@ -42,9 +42,9 @@ func (s *Server) setupRouter() *chi.Mux {
 
 	// API v1 routes
 	r.Route("/api/v1", func(r chi.Router) {
-		// Add v1 routes here
-		// All handlers will have access to deps (MongoDB, PostgreSQL, Redis, Kafka)
-		// Example: r.Get("/prescriptions", prescriptionHandler.List)
+		// Prescription routes
+		prescriptionHandler := handlers.NewPrescriptionHandler(deps)
+		r.Post("/prescriptions/intake", prescriptionHandler.Intake)
 	})
 
 	return r
