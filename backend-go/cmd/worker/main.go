@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pharmonico/backend-gogit/internal/config"
+	"github.com/pharmonico/backend-gogit/internal/workers"
 )
 
 func main() {
@@ -25,15 +26,36 @@ func main() {
 		log.Fatalf("❌ Failed to initialize worker: %v", err)
 	}
 
-	// Register worker handlers here
-	// Example:
-	// validationHandler := handlers.NewValidationHandler(worker.MongoClient, worker.KafkaProducer)
-	// worker.Registry.Register(validationHandler)
-	//
-	// enrollmentHandler := handlers.NewEnrollmentHandler(worker.MongoClient, worker.KafkaProducer)
-	// worker.Registry.Register(enrollmentHandler)
-	//
-	// ... register other handlers as needed
+	// Register worker handlers
+	log.Println("📝 Registering worker handlers...")
+
+	// 1. Validation worker - processes prescription intake
+	validationHandler := workers.NewValidationWorker(worker.MongoClient, worker.KafkaProducer)
+	worker.Registry.Register(validationHandler)
+
+	// 2. Enrollment worker - handles patient enrollment
+	enrollmentHandler := workers.NewEnrollmentWorker(worker.MongoClient, worker.KafkaProducer)
+	worker.Registry.Register(enrollmentHandler)
+
+	// 3. Routing worker - selects pharmacy for prescription
+	routingHandler := workers.NewRoutingWorker(worker.MongoClient, worker.KafkaProducer)
+	worker.Registry.Register(routingHandler)
+
+	// 4. Adjudication worker - processes insurance adjudication
+	adjudicationHandler := workers.NewAdjudicationWorker(worker.MongoClient, worker.KafkaProducer)
+	worker.Registry.Register(adjudicationHandler)
+
+	// 5. Payment worker - creates payment links
+	paymentHandler := workers.NewPaymentWorker(worker.MongoClient, worker.KafkaProducer)
+	worker.Registry.Register(paymentHandler)
+
+	// 6. Shipping worker - creates shipping labels
+	shippingHandler := workers.NewShippingWorker(worker.MongoClient, worker.KafkaProducer)
+	worker.Registry.Register(shippingHandler)
+
+	// 7. Delivery worker - tracks delivery status
+	deliveryHandler := workers.NewDeliveryWorker(worker.MongoClient, worker.KafkaProducer)
+	worker.Registry.Register(deliveryHandler)
 
 	registeredTopics := worker.Registry.GetTopics()
 	if len(registeredTopics) == 0 {
