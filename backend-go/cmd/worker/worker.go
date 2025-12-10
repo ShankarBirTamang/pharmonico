@@ -128,26 +128,36 @@ func (w *Worker) Start(ctx context.Context) error {
 }
 
 // processMessage handles a single Kafka message by routing it to the appropriate handler
+// This implements the event flow: consume -> process -> emit
 func (w *Worker) processMessage(ctx context.Context, msg *kafka.Message) {
-	log.Printf("📨 Received message: topic=%s, partition=%d, offset=%d, key=%s",
+	// 8.3.1: Worker consumes Kafka event
+	log.Printf("📨 [8.3.1] Consuming Kafka event: topic=%s, partition=%d, offset=%d, key=%s",
 		msg.Topic, msg.Partition, msg.Offset, string(msg.Key))
 
 	// Get handler for this topic
 	handler := w.Registry.GetHandler(msg.Topic)
 	if handler == nil {
 		log.Printf("⚠️  Warning: No handler registered for topic: %s. Skipping message.", msg.Topic)
-		// Note: In production, you might want to send to dead letter queue
+		// Send to dead letter queue for unhandled topics
+		if err := workers.PublishToDeadLetterQueue(ctx, w.KafkaProducer, msg, "No handler registered for topic"); err != nil {
+			log.Printf("❌ Failed to send unhandled message to DLQ: %v", err)
+		}
 		return
 	}
 
-	// Process the message
+	// 8.3.2: Process business logic
+	log.Printf("⚙️  [8.3.2] Processing business logic for topic: %s", msg.Topic)
 	if err := handler.Handle(ctx, msg); err != nil {
 		log.Printf("❌ Error processing message (topic=%s, offset=%d): %v", msg.Topic, msg.Offset, err)
-		// Note: In production, you might want to implement retry logic or send to dead letter queue
+		// Send failed message to dead letter queue
+		if err := workers.PublishToDeadLetterQueue(ctx, w.KafkaProducer, msg, err.Error()); err != nil {
+			log.Printf("❌ Failed to send failed message to DLQ: %v", err)
+		}
 		return
 	}
 
-	log.Printf("✅ Successfully processed message: topic=%s, offset=%d", msg.Topic, msg.Offset)
+	// 8.3.3: Next Kafka event is emitted by the handler (if applicable)
+	log.Printf("✅ [8.3.3] Successfully processed message: topic=%s, offset=%d (next event emitted by handler)", msg.Topic, msg.Offset)
 }
 
 // Shutdown gracefully closes all connections

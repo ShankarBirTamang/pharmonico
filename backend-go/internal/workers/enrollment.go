@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pharmonico/backend-gogit/internal/database"
 	"github.com/pharmonico/backend-gogit/internal/kafka"
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,10 +33,17 @@ func (w *EnrollmentWorker) Topic() string {
 }
 
 // Handle processes a validation completed event and handles patient enrollment
+// 8.3.1: Consumes Kafka event (handled by worker loop)
+// 8.3.2: Processes business logic (enrollment)
+// 8.3.3: Emits next Kafka event (enrollment.completed)
 func (w *EnrollmentWorker) Handle(ctx context.Context, msg *kafka.Message) error {
+	// Extract correlation ID from message
+	correlationID := ExtractCorrelationID(msg)
+
 	// Parse the event payload
 	var event struct {
 		EventID        string `json:"event_id"`
+		CorrelationID  string `json:"correlation_id,omitempty"`
 		PrescriptionID string `json:"prescription_id"`
 		PatientID      string `json:"patient_id"`
 		ValidatedAt    string `json:"validated_at"`
@@ -45,11 +51,16 @@ func (w *EnrollmentWorker) Handle(ctx context.Context, msg *kafka.Message) error
 	}
 
 	if err := json.Unmarshal(msg.Value, &event); err != nil {
-		log.Printf("❌ Failed to unmarshal enrollment event: %v", err)
+		log.Printf("❌ [correlation_id=%s] Failed to unmarshal enrollment event: %v", correlationID, err)
 		return err
 	}
 
-	log.Printf("👤 Processing enrollment for patient: %s (prescription: %s)", event.PatientID, event.PrescriptionID)
+	// Use correlation ID from event if available
+	if event.CorrelationID != "" {
+		correlationID = event.CorrelationID
+	}
+
+	log.Printf("👤 [correlation_id=%s] Processing enrollment for patient: %s (prescription: %s)", correlationID, event.PatientID, event.PrescriptionID)
 
 	// Check if patient is already enrolled
 	patientCollection := w.mongoClient.GetCollection("patients")
@@ -114,26 +125,17 @@ func (w *EnrollmentWorker) Handle(ctx context.Context, msg *kafka.Message) error
 		return err
 	}
 
-	// Emit enrollment completed event
-	enrollmentEvent := map[string]interface{}{
-		"event_id":        uuid.New().String(),
-		"prescription_id": event.PrescriptionID,
-		"patient_id":      event.PatientID,
-		"enrolled_at":     time.Now().Format(time.RFC3339),
-		"timestamp":       time.Now().Format(time.RFC3339),
-	}
+	// 8.3.3: Emit enrollment completed event
+	enrollmentEvent := CreateEvent(correlationID, event.PrescriptionID, map[string]interface{}{
+		"patient_id":  event.PatientID,
+		"enrolled_at": time.Now().Format(time.RFC3339),
+	})
 
-	eventBytes, err := json.Marshal(enrollmentEvent)
-	if err != nil {
-		log.Printf("❌ Failed to marshal enrollment event: %v", err)
+	if err := PublishEvent(ctx, w.kafkaProducer, kafka.TopicEnrollmentCompleted, event.PrescriptionID, enrollmentEvent); err != nil {
+		log.Printf("❌ [correlation_id=%s] Failed to publish enrollment completed event: %v", correlationID, err)
 		return err
 	}
 
-	if err := w.kafkaProducer.Publish(ctx, kafka.TopicEnrollmentCompleted, event.PrescriptionID, eventBytes); err != nil {
-		log.Printf("❌ Failed to publish enrollment completed event: %v", err)
-		return err
-	}
-
-	log.Printf("✅ Enrollment completed for patient: %s", event.PatientID)
+	log.Printf("✅ [correlation_id=%s] Enrollment completed for patient: %s", correlationID, event.PatientID)
 	return nil
 }

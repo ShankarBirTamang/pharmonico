@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pharmonico/backend-gogit/internal/database"
 	"github.com/pharmonico/backend-gogit/internal/kafka"
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,10 +33,17 @@ func (w *ValidationWorker) Topic() string {
 }
 
 // Handle processes a prescription intake event and validates it
+// 8.3.1: Consumes Kafka event (handled by worker loop)
+// 8.3.2: Processes business logic (validation)
+// 8.3.3: Emits next Kafka event (validation.completed)
 func (w *ValidationWorker) Handle(ctx context.Context, msg *kafka.Message) error {
+	// Extract correlation ID from message
+	correlationID := ExtractCorrelationID(msg)
+
 	// Parse the event payload
 	var event struct {
 		EventID        string    `json:"event_id"`
+		CorrelationID  string    `json:"correlation_id,omitempty"`
 		PrescriptionID string    `json:"prescription_id"`
 		PatientID      string    `json:"patient_id,omitempty"`
 		DrugNDC        string    `json:"drug_ndc,omitempty"`
@@ -45,11 +51,16 @@ func (w *ValidationWorker) Handle(ctx context.Context, msg *kafka.Message) error
 	}
 
 	if err := json.Unmarshal(msg.Value, &event); err != nil {
-		log.Printf("❌ Failed to unmarshal validation event: %v", err)
+		log.Printf("❌ [correlation_id=%s] Failed to unmarshal validation event: %v", correlationID, err)
 		return err
 	}
 
-	log.Printf("🔍 Processing validation for prescription: %s", event.PrescriptionID)
+	// Use correlation ID from event if available, otherwise use extracted one
+	if event.CorrelationID != "" {
+		correlationID = event.CorrelationID
+	}
+
+	log.Printf("🔍 [correlation_id=%s] Processing validation for prescription: %s", correlationID, event.PrescriptionID)
 
 	// Fetch prescription from MongoDB
 	prescriptionCollection := w.mongoClient.GetCollection("prescriptions")
@@ -101,31 +112,21 @@ func (w *ValidationWorker) Handle(ctx context.Context, msg *kafka.Message) error
 		return err
 	}
 
-	// If validation passed, emit validation completed event
+	// 8.3.3: Emit next Kafka event if validation passed
 	if isValid {
-		validationEvent := map[string]interface{}{
-			"event_id":        uuid.New().String(),
-			"prescription_id": event.PrescriptionID,
-			"patient_id":      event.PatientID,
-			"validated_at":    time.Now().Format(time.RFC3339),
-			"timestamp":       time.Now().Format(time.RFC3339),
-		}
+		validationEvent := CreateEvent(correlationID, event.PrescriptionID, map[string]interface{}{
+			"patient_id":   event.PatientID,
+			"validated_at": time.Now().Format(time.RFC3339),
+		})
 
-		eventBytes, err := json.Marshal(validationEvent)
-		if err != nil {
-			log.Printf("❌ Failed to marshal validation event: %v", err)
+		if err := PublishEvent(ctx, w.kafkaProducer, kafka.TopicValidationCompleted, event.PrescriptionID, validationEvent); err != nil {
+			log.Printf("❌ [correlation_id=%s] Failed to publish validation completed event: %v", correlationID, err)
 			return err
 		}
 
-		// Emit validation completed event
-		if err := w.kafkaProducer.Publish(ctx, kafka.TopicValidationCompleted, event.PrescriptionID, eventBytes); err != nil {
-			log.Printf("❌ Failed to publish validation completed event: %v", err)
-			return err
-		}
-
-		log.Printf("✅ Validation completed for prescription: %s", event.PrescriptionID)
+		log.Printf("✅ [correlation_id=%s] Validation completed for prescription: %s", correlationID, event.PrescriptionID)
 	} else {
-		log.Printf("⚠️  Validation failed for prescription: %s - Errors: %v", event.PrescriptionID, validationErrors)
+		log.Printf("⚠️  [correlation_id=%s] Validation failed for prescription: %s - Errors: %v", correlationID, event.PrescriptionID, validationErrors)
 	}
 
 	return nil

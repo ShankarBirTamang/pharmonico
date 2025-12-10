@@ -7,7 +7,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pharmonico/backend-gogit/internal/database"
 	"github.com/pharmonico/backend-gogit/internal/kafka"
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,10 +33,17 @@ func (w *RoutingWorker) Topic() string {
 }
 
 // Handle processes an enrollment completed event and selects a pharmacy
+// 8.3.1: Consumes Kafka event (handled by worker loop)
+// 8.3.2: Processes business logic (pharmacy selection)
+// 8.3.3: Emits next Kafka event (pharmacy.selected)
 func (w *RoutingWorker) Handle(ctx context.Context, msg *kafka.Message) error {
+	// Extract correlation ID from message
+	correlationID := ExtractCorrelationID(msg)
+
 	// Parse the event payload
 	var event struct {
 		EventID        string `json:"event_id"`
+		CorrelationID  string `json:"correlation_id,omitempty"`
 		PrescriptionID string `json:"prescription_id"`
 		PatientID      string `json:"patient_id"`
 		EnrolledAt     string `json:"enrolled_at"`
@@ -45,11 +51,16 @@ func (w *RoutingWorker) Handle(ctx context.Context, msg *kafka.Message) error {
 	}
 
 	if err := json.Unmarshal(msg.Value, &event); err != nil {
-		log.Printf("❌ Failed to unmarshal routing event: %v", err)
+		log.Printf("❌ [correlation_id=%s] Failed to unmarshal routing event: %v", correlationID, err)
 		return err
 	}
 
-	log.Printf("📍 Processing pharmacy routing for prescription: %s", event.PrescriptionID)
+	// Use correlation ID from event if available
+	if event.CorrelationID != "" {
+		correlationID = event.CorrelationID
+	}
+
+	log.Printf("📍 [correlation_id=%s] Processing pharmacy routing for prescription: %s", correlationID, event.PrescriptionID)
 
 	// Fetch prescription to get patient location or preferences
 	prescriptionCollection := w.mongoClient.GetCollection("prescriptions")
@@ -103,25 +114,16 @@ func (w *RoutingWorker) Handle(ctx context.Context, msg *kafka.Message) error {
 		return err
 	}
 
-	// Emit pharmacy selected event
-	routingEvent := map[string]interface{}{
-		"event_id":          uuid.New().String(),
-		"prescription_id":   event.PrescriptionID,
+	// 8.3.3: Emit pharmacy selected event
+	routingEvent := CreateEvent(correlationID, event.PrescriptionID, map[string]interface{}{
 		"patient_id":        event.PatientID,
 		"pharmacy_id":       pharmacyID,
 		"pharmacy_ncpdp_id": pharmacyNCPDPID,
 		"selected_at":       time.Now().Format(time.RFC3339),
-		"timestamp":         time.Now().Format(time.RFC3339),
-	}
+	})
 
-	eventBytes, err := json.Marshal(routingEvent)
-	if err != nil {
-		log.Printf("❌ Failed to marshal routing event: %v", err)
-		return err
-	}
-
-	if err := w.kafkaProducer.Publish(ctx, kafka.TopicPharmacySelected, event.PrescriptionID, eventBytes); err != nil {
-		log.Printf("❌ Failed to publish pharmacy selected event: %v", err)
+	if err := PublishEvent(ctx, w.kafkaProducer, kafka.TopicPharmacySelected, event.PrescriptionID, routingEvent); err != nil {
+		log.Printf("❌ [correlation_id=%s] Failed to publish pharmacy selected event: %v", correlationID, err)
 		return err
 	}
 
