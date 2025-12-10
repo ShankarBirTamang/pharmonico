@@ -5,6 +5,9 @@
 
 FROM golang:1.22-alpine
 
+# Set GOTOOLCHAIN to auto to allow automatic toolchain upgrades when needed
+ENV GOTOOLCHAIN=auto
+
 # Install Air for hot reload and git for dependencies
 # Using v1.51.0 with old module path (compatible with Go 1.22)
 RUN go install github.com/cosmtrek/air@v1.51.0 && \
