@@ -41,6 +41,9 @@ type Prescription struct {
 	// Validation errors (if any)
 	ValidationErrors []string `bson:"validation_errors,omitempty" json:"validation_errors,omitempty"`
 
+	// Date written (from prescription)
+	DateWritten string `bson:"date_written,omitempty" json:"date_written,omitempty"`
+
 	// Metadata
 	CreatedAt time.Time `bson:"created_at" json:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`

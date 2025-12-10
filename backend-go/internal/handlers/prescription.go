@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/pharmonico/backend-gogit/internal/models"
 	"github.com/pharmonico/backend-gogit/pkg/ncpdp"
@@ -87,8 +88,61 @@ func (h *PrescriptionHandler) Intake(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Subtask 1.1.6: Generate dedup hash from core fields (patient + drug + date)
+	// Generate deduplication hash
+	patientID := prescription.Patient.ID
+	if patientID == "" {
+		// Use a composite key if patient ID is not available
+		patientID = fmt.Sprintf("%s_%s", prescription.Patient.FirstName, prescription.Patient.LastName)
+	}
+	dateWritten := prescription.DateWritten
+	if dateWritten == "" {
+		// Use current date if date written is not available
+		dateWritten = time.Now().Format("2006-01-02")
+	}
+	dedupHash := ncpdp.GenerateDedupHash(patientID, prescription.Medication.NDC, dateWritten)
+
+	// Subtask 1.1.7: Check Redis for duplicates (TTL 5 mins)
+	ctx := r.Context()
+	exists, err := h.deps.Redis.Exists(ctx, dedupHash)
+	if err != nil {
+		log.Printf("Error checking Redis for duplicate: %v", err)
+		// Continue processing if Redis check fails (don't block intake)
+	} else if exists {
+		// Subtask 1.1.7: Duplicate detected
+		log.Printf("Duplicate prescription detected: %s", dedupHash)
+		response := models.IntakeResponse{
+			PrescriptionID: "",
+			Message:        "Duplicate prescription detected. This prescription was recently submitted.",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict) // 409 Conflict
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	// Subtask 1.1.8: Store dedup key in Redis if new (TTL 5 mins)
+	// Use SetNX for atomic operation - only set if key doesn't exist
+	ttl := 5 * time.Minute
+	wasSet, err := h.deps.Redis.SetNX(ctx, dedupHash, "1", ttl)
+	if err != nil {
+		log.Printf("Error storing dedup key in Redis: %v", err)
+		// Continue processing even if Redis storage fails
+	} else if !wasSet {
+		// Key was already set (race condition - another request got there first)
+		log.Printf("Race condition: duplicate prescription detected during SetNX: %s", dedupHash)
+		response := models.IntakeResponse{
+			PrescriptionID: "",
+			Message:        "Duplicate prescription detected. This prescription was recently submitted.",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict) // 409 Conflict
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
 	// For now, just return success with a mock prescription_id
-	// We'll add persistence, deduplication, and Kafka in the next steps
+	// We'll add persistence and Kafka in the next steps
 	response := models.IntakeResponse{
 		PrescriptionID: "rx_" + prescription.Patient.ID + "_" + prescription.Medication.NDC,
 		Message:        "Prescription received successfully",

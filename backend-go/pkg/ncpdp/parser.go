@@ -2,6 +2,8 @@
 package ncpdp
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -102,6 +104,7 @@ func ParseXML(xmlData string) (*models.Prescription, error) {
 	// Extract and convert to Prescription model
 	prescription := &models.Prescription{
 		Status:          models.StatusReceived,
+		DateWritten:     script.Body.Prescription.DateWritten,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
 		OriginalPayload: xmlData,
@@ -198,10 +201,16 @@ func validateXMLWellFormed(xmlData string) error {
 }
 
 // GenerateDedupHash generates a deduplication hash from core prescription fields
-// Format: patient_id + drug_ndc + date_written
+// Subtask 1.1.6: Generate dedup hash from core fields (patient + drug + date)
+// Uses SHA256 hash of: patient_id + drug_ndc + date_written
 func GenerateDedupHash(patientID, drugNDC, dateWritten string) string {
-	// Simple hash generation - in production, you might want to use a proper hash function
-	// For now, we'll create a simple key
-	key := fmt.Sprintf("rx:dedup:%s:%s:%s", patientID, drugNDC, dateWritten)
-	return key
+	// Create a composite key from core fields
+	compositeKey := fmt.Sprintf("%s:%s:%s", patientID, drugNDC, dateWritten)
+	
+	// Generate SHA256 hash for consistent, fixed-length keys
+	hash := sha256.Sum256([]byte(compositeKey))
+	hashString := hex.EncodeToString(hash[:])
+	
+	// Return Redis key with prefix
+	return fmt.Sprintf("rx:dedup:%s", hashString)
 }
