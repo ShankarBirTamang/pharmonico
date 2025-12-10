@@ -9,6 +9,7 @@ import (
 type Config struct {
 	// Environment
 	AppEnv string
+	Port   string
 
 	// Database connections
 	MongoDBURI  string
@@ -32,6 +33,7 @@ type Config struct {
 func Load() *Config {
 	return &Config{
 		AppEnv:         getEnv("APP_ENV", "development"),
+		Port:           getEnv("PORT", "8080"),
 		MongoDBURI:     getEnv("MONGODB_URI", "mongodb://localhost:27017/pharmonico"),
 		PostgresDSN:    getEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/pharmonico?sslmode=disable"),
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
