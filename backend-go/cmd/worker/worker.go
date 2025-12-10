@@ -39,14 +39,15 @@ func InitializeWorker(cfg *config.Config) (*Worker, error) {
 	worker.MongoClient = mongoClient
 	log.Println("✅ MongoDB connected successfully")
 
-	// Connect to PostgreSQL
-	log.Println("🔌 Connecting to PostgreSQL...")
+	// Connect to PostgreSQL (for audit logs only - NOT for job queues)
+	// Note: We use Kafka for event-driven processing, not PostgreSQL job queues
+	log.Println("🔌 Connecting to PostgreSQL (audit logs only)...")
 	pgClient, err := database.ConnectPostgres(cfg.PostgresDSN)
 	if err != nil {
 		return nil, err
 	}
 	worker.Postgres = pgClient
-	log.Println("✅ PostgreSQL connected successfully")
+	log.Println("✅ PostgreSQL connected successfully (audit logs only)")
 
 	// Connect to Redis
 	log.Println("🔌 Connecting to Redis...")
@@ -84,6 +85,8 @@ func InitializeWorker(cfg *config.Config) (*Worker, error) {
 }
 
 // Start begins the worker loop that polls Kafka and processes messages
+// Note: This worker uses Kafka event-driven architecture, NOT PostgreSQL job queue polling
+// Task 8.4: Removed PostgreSQL polling loops - all processing is now Kafka-based
 func (w *Worker) Start(ctx context.Context) error {
 	// Get all registered topics
 	topics := w.Registry.GetTopics()

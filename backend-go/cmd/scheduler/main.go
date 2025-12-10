@@ -1,5 +1,15 @@
 // Package main is the entry point for the Pharmonico Scheduler service.
-// The scheduler handles cron jobs and periodic polling tasks.
+// The scheduler handles cron jobs and periodic maintenance tasks.
+//
+// NOTE: This scheduler is NOT for PostgreSQL job queue polling.
+// Task 8.4: All worker processing uses Kafka event-driven architecture.
+// PostgreSQL job queues have been removed - see migration 000_drop_job_queue_tables.sql
+//
+// This scheduler is for other periodic tasks such as:
+// - Prescription expiry checks (daily)
+// - Enrollment reminder emails (hourly)
+// - Report generation (weekly)
+// - Temporary file cleanup (daily)
 package main
 
 import (
@@ -12,6 +22,8 @@ import (
 
 func main() {
 	log.Println("🕐 Starting Pharmonico Scheduler...")
+	log.Println("ℹ️  Note: This scheduler is for maintenance tasks, NOT job queue polling")
+	log.Println("ℹ️  All worker processing uses Kafka event-driven architecture")
 
 	// TODO: Load configuration from environment
 	// config := config.Load()
@@ -19,7 +31,7 @@ func main() {
 	// TODO: Initialize database connections
 	// db := database.Connect(config)
 
-	// TODO: Register scheduled jobs:
+	// TODO: Register scheduled maintenance jobs:
 	// - Prescription expiry checks (daily)
 	// - Enrollment reminder emails (hourly)
 	// - Report generation (weekly)
@@ -39,8 +51,8 @@ func main() {
 		select {
 		case <-ticker.C:
 			// This runs every minute
-			log.Println("⏰ Scheduler tick - checking for pending jobs...")
-			// TODO: Check and execute due jobs
+			log.Println("⏰ Scheduler tick - maintenance tasks...")
+			// TODO: Execute scheduled maintenance tasks
 		case <-quit:
 			log.Println("🛑 Shutting down Scheduler gracefully...")
 			// TODO: Cleanup resources

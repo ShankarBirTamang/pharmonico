@@ -1,5 +1,7 @@
 -- Migration: Drop job queue tables (if they exist)
+-- Task 8.4: Remove job queue dependencies
 -- This ensures we're using Kafka-only workflow, not PostgreSQL job queues
+-- All worker processing is now event-driven via Kafka consumers
 
 -- Drop all job queue related tables
 DROP TABLE IF EXISTS tracking_jobs CASCADE;
