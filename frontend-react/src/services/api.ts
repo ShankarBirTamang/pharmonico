@@ -1,16 +1,24 @@
 // API Configuration and Base Client
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+const API_SERVER_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8080'
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>
 }
 
+interface HealthResponse {
+  status: string
+  message: string
+}
+
 class ApiClient {
   private baseUrl: string
+  private serverUrl: string
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, serverUrl: string) {
     this.baseUrl = baseUrl
+    this.serverUrl = serverUrl
   }
 
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -69,7 +77,29 @@ class ApiClient {
   delete<T>(endpoint: string, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' })
   }
+
+  /**
+   * Health check endpoint (outside /api/v1)
+   * Calls GET /health on the server
+   */
+  async healthCheck(): Promise<HealthResponse> {
+    const response = await fetch(`${this.serverUrl}/health`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`Health check failed: ${response.status}`)
+    }
+
+    return response.json()
+  }
 }
 
-export const api = new ApiClient(API_BASE_URL)
+export const api = new ApiClient(API_BASE_URL, API_SERVER_URL)
+
+// Export types
+export type { HealthResponse }
 
