@@ -96,6 +96,24 @@ class ApiClient {
 
     return response.json()
   }
+
+  /**
+   * Submit a prescription for intake
+   * @param payload - NCPDP XML or JSON string
+   * @param format - "xml" or "json" (defaults to "xml")
+   */
+  async submitPrescription(
+    payload: string,
+    format: 'xml' | 'json' = 'xml'
+  ): Promise<{ prescription_id: string; message?: string }> {
+    return this.post<{ prescription_id: string; message?: string }>(
+      '/v1/prescriptions/intake',
+      {
+        payload,
+        format,
+      }
+    )
+  }
 }
 
 export const api = new ApiClient(API_BASE_URL, API_SERVER_URL)

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Header, Footer } from './components/layout'
-import { Dashboard, Enroll, Home } from './pages'
+import { Dashboard, Enroll, Home, Intake } from './pages'
 
 // Layout wrapper component for routes that need header/footer
 function Layout({ children }: { children: React.ReactNode }) {
@@ -37,6 +37,14 @@ function App() {
             element={
               <Layout>
                 <Dashboard />
+              </Layout>
+            }
+          />
+          <Route
+            path="/intake"
+            element={
+              <Layout>
+                <Intake />
               </Layout>
             }
           />

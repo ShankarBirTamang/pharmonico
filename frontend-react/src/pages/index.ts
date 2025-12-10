@@ -2,4 +2,5 @@
 export { Dashboard } from './Dashboard'
 export { Enroll } from './Enroll'
 export { Home } from './Home'
+export { Intake } from './Intake'
 

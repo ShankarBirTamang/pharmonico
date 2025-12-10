@@ -8,6 +8,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/ops/dashboard' },
+  { label: 'Intake', href: '/intake' },
   { label: 'Prescriptions', href: '/prescriptions' },
   { label: 'Pharmacies', href: '/pharmacies' },
   { label: 'Reports', href: '/reports' },
