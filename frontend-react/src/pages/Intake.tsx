@@ -1,21 +1,120 @@
 import { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui'
+import { PrescriptionForm, PrescriptionFormData } from '../components/forms'
 import { api } from '../services/api'
+import { getPrescriptionExample } from '../services/examples'
+import { convertFormDataToXML, convertExampleToFormData } from '../utils/xmlConverter'
+
+const initialFormData: PrescriptionFormData = {
+  // Patient
+  patientId: '',
+  patientFirstName: '',
+  patientLastName: '',
+  patientDateOfBirth: '',
+  patientStreet: '',
+  patientCity: '',
+  patientState: '',
+  patientZipCode: '',
+  patientPhone: '',
+
+  // Prescriber
+  prescriberId: '',
+  prescriberNPI: '',
+  prescriberDEA: '',
+  prescriberFirstName: '',
+  prescriberLastName: '',
+  prescriberStreet: '',
+  prescriberCity: '',
+  prescriberState: '',
+  prescriberZipCode: '',
+  prescriberPhone: '',
+
+  // Medication
+  medicationNDC: '',
+  medicationName: '',
+  medicationQuantity: '',
+  medicationRefills: '',
+  medicationDosage: '',
+  medicationDirections: '',
+  dateWritten: new Date().toISOString().split('T')[0],
+
+  // Insurance
+  insuranceBIN: '',
+  insurancePCN: '',
+  insuranceGroupID: '',
+  insuranceMemberID: '',
+  insurancePlanName: '',
+}
 
 export function Intake() {
-  const [xmlPayload, setXmlPayload] = useState('')
+  const [formData, setFormData] = useState<PrescriptionFormData>(initialFormData)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ prescription_id?: string; error?: string } | null>(null)
+  const [errors, setErrors] = useState<Partial<Record<keyof PrescriptionFormData, string>>>({})
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof PrescriptionFormData, string>> = {}
+
+    // Patient required fields
+    if (!formData.patientFirstName.trim()) {
+      newErrors.patientFirstName = 'First name is required'
+    }
+    if (!formData.patientLastName.trim()) {
+      newErrors.patientLastName = 'Last name is required'
+    }
+    if (!formData.patientDateOfBirth) {
+      newErrors.patientDateOfBirth = 'Date of birth is required'
+    }
+
+    // Prescriber required fields
+    if (!formData.prescriberNPI.trim()) {
+      newErrors.prescriberNPI = 'NPI is required'
+    } else if (formData.prescriberNPI.length !== 10 || !/^\d+$/.test(formData.prescriberNPI)) {
+      newErrors.prescriberNPI = 'NPI must be 10 digits'
+    }
+    if (!formData.prescriberFirstName.trim()) {
+      newErrors.prescriberFirstName = 'First name is required'
+    }
+    if (!formData.prescriberLastName.trim()) {
+      newErrors.prescriberLastName = 'Last name is required'
+    }
+
+    // Medication required fields
+    if (!formData.medicationNDC.trim()) {
+      newErrors.medicationNDC = 'NDC is required'
+    }
+    if (!formData.medicationName.trim()) {
+      newErrors.medicationName = 'Medication name is required'
+    }
+    if (!formData.medicationQuantity || parseInt(formData.medicationQuantity) <= 0) {
+      newErrors.medicationQuantity = 'Quantity must be greater than 0'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setResult(null)
 
+    if (!validateForm()) {
+      return
+    }
+
+    setLoading(true)
+
     try {
+      // Convert form data to XML
+      const xmlPayload = convertFormDataToXML(formData)
+      
+      // Submit to API
       const response = await api.submitPrescription(xmlPayload, 'xml')
       setResult({ prescription_id: response.prescription_id })
-      setXmlPayload('') // Clear form on success
+      
+      // Clear form on success
+      setFormData(initialFormData)
+      setErrors({})
     } catch (error) {
       setResult({ error: error instanceof Error ? error.message : 'Failed to submit prescription' })
     } finally {
@@ -23,110 +122,77 @@ export function Intake() {
     }
   }
 
-  const exampleXML = `<Message>
-  <Header>
-    <MessageID>MSG001</MessageID>
-    <Timestamp>2024-01-15T10:30:00Z</Timestamp>
-  </Header>
-  <Body>
-    <Prescription DateWritten="2024-01-15">
-      <Patient ID="PAT001">
-        <FirstName>John</FirstName>
-        <LastName>Doe</LastName>
-        <DateOfBirth>1980-05-15</DateOfBirth>
-        <Address>
-          <Street>123 Main St</Street>
-          <City>New York</City>
-          <State>NY</State>
-          <ZipCode>10001</ZipCode>
-        </Address>
-        <Phone>555-1234</Phone>
-      </Patient>
-      <Prescriber ID="PRES001">
-        <NPI>1234567890</NPI>
-        <DEA>AB1234567</DEA>
-        <FirstName>Jane</FirstName>
-        <LastName>Smith</LastName>
-        <Address>
-          <Street>456 Medical Blvd</Street>
-          <City>New York</City>
-          <State>NY</State>
-          <ZipCode>10002</ZipCode>
-        </Address>
-        <Phone>555-5678</Phone>
-      </Prescriber>
-      <Medication>
-        <NDC>00002-7510-02</NDC>
-        <Name>Humira</Name>
-        <Quantity>2</Quantity>
-        <Refills>3</Refills>
-        <Dosage>40mg</Dosage>
-        <Directions>Take 2 injections every 2 weeks</Directions>
-      </Medication>
-      <Insurance>
-        <BIN>004682</BIN>
-        <PCN>CNRX</PCN>
-        <MemberID>MEM123456</MemberID>
-        <PlanName>Blue Cross Blue Shield</PlanName>
-      </Insurance>
-    </Prescription>
-  </Body>
-</Message>`
-
-  const loadExample = () => {
-    setXmlPayload(exampleXML)
+  const handleLoadExample = () => {
     setResult(null)
+    setErrors({})
+
+    // Get a random static example
+    const example = getPrescriptionExample()
+    
+    // Convert example to form data
+    const exampleFormData = convertExampleToFormData(example)
+    setFormData(exampleFormData)
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>Prescription Intake</CardTitle>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
-            Submit NCPDP SCRIPT prescription in XML format as a Healthcare Provider
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Prescription Intake Form</CardTitle>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">
+                Fill out the prescription form below as a Healthcare Provider. All fields marked with <span className="text-red-500">*</span> are required.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleLoadExample}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Load Example
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="xml-payload" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                  NCPDP XML Payload
-                </label>
-                <button
-                  type="button"
-                  onClick={loadExample}
-                  className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-                >
-                  Load Example
-                </button>
-              </div>
-              <textarea
-                id="xml-payload"
-                value={xmlPayload}
-                onChange={(e) => setXmlPayload(e.target.value)}
-                rows={20}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-slate-800 dark:border-slate-600 dark:text-white font-mono text-sm"
-                placeholder="Paste or enter NCPDP XML here..."
-                required
-              />
-            </div>
+            <PrescriptionForm
+              formData={formData}
+              onChange={setFormData}
+              errors={errors}
+            />
 
-            <button
-              type="submit"
-              disabled={loading || !xmlPayload.trim()}
-              className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></span>
-                  Submitting...
-                </span>
-              ) : (
-                'Submit Prescription'
-              )}
-            </button>
+            <div className="flex gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent"></span>
+                    Submitting Prescription...
+                  </span>
+                ) : (
+                  'Submit Prescription'
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData(initialFormData)
+                  setErrors({})
+                  setResult(null)
+                }}
+                className="btn-secondary"
+                disabled={loading}
+              >
+                Clear Form
+              </button>
+            </div>
           </form>
 
           {result && (
@@ -155,19 +221,8 @@ export function Intake() {
               )}
             </div>
           )}
-
-          {/* Example XML */}
-          <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-              Example NCPDP XML Format:
-            </p>
-            <pre className="text-xs text-slate-600 dark:text-slate-400 overflow-x-auto whitespace-pre-wrap">
-              {exampleXML}
-            </pre>
-          </div>
         </CardContent>
       </Card>
     </div>
   )
 }
-
