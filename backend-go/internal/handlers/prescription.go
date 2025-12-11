@@ -236,7 +236,6 @@ func (h *PrescriptionHandler) Intake(w http.ResponseWriter, r *http.Request) {
 	// Subtask 1.1.13: Return { prescription_id }
 	response := models.IntakeResponse{
 		PrescriptionID: prescriptionID,
-		Message:        "Prescription received successfully",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
