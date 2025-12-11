@@ -11,6 +11,7 @@ import (
 
 	"github.com/pharmonico/backend-gogit/internal/models"
 	"github.com/pharmonico/backend-gogit/pkg/ncpdp"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // PrescriptionHandler handles prescription-related requests
@@ -141,10 +142,43 @@ func (h *PrescriptionHandler) Intake(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For now, just return success with a mock prescription_id
-	// We'll add persistence and Kafka in the next steps
+	// Subtask 1.1.9: Insert prescription into MongoDB
+	// Subtask 1.1.10: Set status: "received"
+	now := time.Now()
+	prescription.Status = models.StatusReceived
+	prescription.CreatedAt = now
+	prescription.UpdatedAt = now
+	prescription.OriginalPayload = req.Payload
+
+	// Generate prescription_id if not already set
+	if prescription.PrescriptionID == "" {
+		// Generate a unique prescription ID using timestamp and patient/medication info
+		prescription.PrescriptionID = fmt.Sprintf("rx_%d_%s_%s", now.Unix(), prescription.Patient.ID, prescription.Medication.NDC)
+	}
+
+	// Insert into MongoDB
+	collection := h.deps.MongoClient.GetCollection("prescriptions")
+	result, err := collection.InsertOne(ctx, prescription)
+	if err != nil {
+		log.Printf("Error inserting prescription into MongoDB: %v", err)
+		http.Error(w, "Failed to save prescription", http.StatusInternalServerError)
+		return
+	}
+
+	// Get the inserted ID
+	insertedID := result.InsertedID
+	var prescriptionID string
+	if oid, ok := insertedID.(primitive.ObjectID); ok {
+		prescriptionID = oid.Hex()
+	} else {
+		prescriptionID = prescription.PrescriptionID
+	}
+
+	log.Printf("Prescription inserted successfully with ID: %s", prescriptionID)
+
+	// Subtask 1.1.13: Return { prescription_id }
 	response := models.IntakeResponse{
-		PrescriptionID: "rx_" + prescription.Patient.ID + "_" + prescription.Medication.NDC,
+		PrescriptionID: prescriptionID,
 		Message:        "Prescription received successfully",
 	}
 

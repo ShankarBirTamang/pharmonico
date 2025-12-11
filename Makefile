@@ -73,3 +73,67 @@ postgres-logs: ## View PostgreSQL logs
 redis-logs: ## View Redis logs
 	@echo "🔍 Viewing Redis logs..."
 	@docker compose logs -f redis
+
+redis-cli: ## Open Redis CLI
+	@echo "🔍 Opening Redis CLI..."
+	@docker exec -it pharmonico-redis redis-cli
+
+# ==========================================
+# MongoDB Monitoring for the terminal window
+# ==========================================
+
+mongo-shell: ## Open MongoDB shell
+	@echo "🔍 Opening MongoDB shell..."
+	@docker exec -it pharmonico-mongodb mongosh pharmonico
+
+mongo-monitor: ## Enable MongoDB profiler (logs all operations)
+	@echo "🔍 Enabling MongoDB profiler..."
+	@docker exec -it pharmonico-mongodb mongosh pharmonico --eval "db.setProfilingLevel(2); print('✅ Profiler enabled - all operations will be logged')"
+
+mongo-monitor-slow: ## Enable profiler for slow operations only (>100ms)
+	@echo "🔍 Enabling MongoDB profiler for slow operations (>100ms)..."
+	@docker exec -it pharmonico-mongodb mongosh pharmonico --eval "db.setProfilingLevel(1, { slowms: 100 }); print('✅ Profiler enabled for slow operations')"
+
+mongo-monitor-off: ## Disable MongoDB profiler
+	@echo "🛑 Disabling MongoDB profiler..."
+	@docker exec -it pharmonico-mongodb mongosh pharmonico --eval "db.setProfilingLevel(0); print('✅ Profiler disabled')"
+
+mongo-watch: ## Watch profiler output in real-time (like Redis MONITOR)
+	@echo "👀 Watching MongoDB operations (press Ctrl+C to stop)..."
+	@docker exec -it pharmonico-mongodb mongosh pharmonico --eval "var cursor = db.system.profile.find().sort({ts: -1}).limit(1); var lastTs = null; while(true) { var doc = cursor.hasNext() ? cursor.next() : null; if(doc && doc.ts !== lastTs) { print(JSON.stringify(doc, null, 2)); lastTs = doc.ts; } sleep(500); cursor = db.system.profile.find().sort({ts: -1}).limit(1); }"
+
+mongo-profiler-tail: ## Show recent profiler logs
+	@echo "📋 Recent MongoDB operations:"
+	@docker exec pharmonico-mongodb mongosh pharmonico --quiet --eval "db.system.profile.find().sort({ts: -1}).limit(10).forEach(function(op) { print('[' + op.ts + '] ' + op.op + ' on ' + op.ns + ' (' + (op.millis || 0) + 'ms)'); })"
+
+mongo-watch-prescriptions: ## Watch prescription collection changes in real-time
+	@echo "👀 Watching prescription collection (press Ctrl+C to stop)..."
+	@docker exec -it pharmonico-mongodb mongosh pharmonico --eval "var changeStream = db.prescriptions.watch(); changeStream.on('change', function(change) { print(JSON.stringify(change, null, 2)); });"
+
+mongo-stat: ## Show MongoDB server statistics (refreshes every 1s)
+	@echo "📊 MongoDB server statistics (press Ctrl+C to stop):"
+	@docker exec -it pharmonico-mongodb mongostat --host localhost:27017 1
+
+mongo-top: ## Show MongoDB collection activity (refreshes every 1s)
+	@echo "📊 MongoDB collection activity (press Ctrl+C to stop):"
+	@docker exec -it pharmonico-mongodb mongotop --host localhost:27017 1
+
+mongo-current-ops: ## Show current MongoDB operations
+	@echo "⚡ Current MongoDB operations:"
+	@docker exec pharmonico-mongodb mongosh pharmonico --quiet --eval "var ops = db.currentOp().inprog; if(ops.length === 0) { print('No operations running'); } else { ops.forEach(function(op) { print('OpID: ' + op.opid + ' | Op: ' + op.op + ' | NS: ' + (op.ns || 'N/A') + ' | Duration: ' + (op.microsecs/1000).toFixed(2) + 'ms'); }); }"
+
+mongo-stats: ## Show MongoDB database statistics
+	@echo "📊 MongoDB Database Statistics:"
+	@docker exec pharmonico-mongodb mongosh pharmonico --quiet --eval "var stats = db.stats(1024*1024); print('Database: pharmonico'); print('Collections: ' + stats.collections); print('Data Size: ' + stats.dataSize.toFixed(2) + ' MB'); print('Storage Size: ' + stats.storageSize.toFixed(2) + ' MB'); print('Index Size: ' + stats.indexSize.toFixed(2) + ' MB');"
+
+mongo-prescription-stats: ## Show prescription collection statistics
+	@echo "📊 Prescription Collection Statistics:"
+	@docker exec pharmonico-mongodb mongosh pharmonico --quiet --eval "print('Total Prescriptions: ' + db.prescriptions.countDocuments()); print('\\nBy Status:'); db.prescriptions.aggregate([{ \$group: { _id: '\$status', count: { \$sum: 1 } } }, { \$sort: { count: -1 } }]).forEach(function(doc) { print('  ' + (doc._id || 'null') + ': ' + doc.count); });"
+
+
+# ==========================================
+# PostgreSQL Monitoring
+# ==========================================
+psql: ## Open PostgreSQL shell
+	@echo "🔍 Opening PostgreSQL shell..."
+	@docker exec -it pharmonico-postgres psql -U postgres -d pharmonico
