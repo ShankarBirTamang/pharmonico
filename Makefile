@@ -106,9 +106,6 @@ mongo-profiler-tail: ## Show recent profiler logs
 	@echo "📋 Recent MongoDB operations:"
 	@docker exec pharmonico-mongodb mongosh pharmonico --quiet --eval "db.system.profile.find().sort({ts: -1}).limit(10).forEach(function(op) { print('[' + op.ts + '] ' + op.op + ' on ' + op.ns + ' (' + (op.millis || 0) + 'ms)'); })"
 
-mongo-watch-prescriptions: ## Watch prescription collection changes in real-time
-	@echo "👀 Watching prescription collection (press Ctrl+C to stop)..."
-	@docker exec -it pharmonico-mongodb mongosh pharmonico --eval "var changeStream = db.prescriptions.watch(); changeStream.on('change', function(change) { print(JSON.stringify(change, null, 2)); });"
 
 mongo-stat: ## Show MongoDB server statistics (refreshes every 1s)
 	@echo "📊 MongoDB server statistics (press Ctrl+C to stop):"
@@ -118,9 +115,6 @@ mongo-top: ## Show MongoDB collection activity (refreshes every 1s)
 	@echo "📊 MongoDB collection activity (press Ctrl+C to stop):"
 	@docker exec -it pharmonico-mongodb mongotop --host localhost:27017 1
 
-mongo-current-ops: ## Show current MongoDB operations
-	@echo "⚡ Current MongoDB operations:"
-	@docker exec pharmonico-mongodb mongosh pharmonico --quiet --eval "var ops = db.currentOp().inprog; if(ops.length === 0) { print('No operations running'); } else { ops.forEach(function(op) { print('OpID: ' + op.opid + ' | Op: ' + op.op + ' | NS: ' + (op.ns || 'N/A') + ' | Duration: ' + (op.microsecs/1000).toFixed(2) + 'ms'); }); }"
 
 mongo-stats: ## Show MongoDB database statistics
 	@echo "📊 MongoDB Database Statistics:"
@@ -128,7 +122,7 @@ mongo-stats: ## Show MongoDB database statistics
 
 mongo-prescription-stats: ## Show prescription collection statistics
 	@echo "📊 Prescription Collection Statistics:"
-	@docker exec pharmonico-mongodb mongosh pharmonico --quiet --eval "print('Total Prescriptions: ' + db.prescriptions.countDocuments()); print('\\nBy Status:'); db.prescriptions.aggregate([{ \$group: { _id: '\$status', count: { \$sum: 1 } } }, { \$sort: { count: -1 } }]).forEach(function(doc) { print('  ' + (doc._id || 'null') + ': ' + doc.count); });"
+	@docker exec pharmonico-mongodb sh -c 'mongosh pharmonico --quiet --eval '"'"'print("Total Prescriptions: " + db.prescriptions.countDocuments()); print("\nBy Status:"); db.prescriptions.aggregate([{ "$$group": { "_id": "$$status", "count": { "$$sum": 1 } } }, { "$$sort": { "count": -1 } }]).forEach(function(doc) { print("  " + (doc._id || "null") + ": " + doc.count); });'"'"''
 
 
 # ==========================================

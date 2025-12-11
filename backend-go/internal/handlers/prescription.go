@@ -3,13 +3,17 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/pharmonico/backend-gogit/internal/kafka"
+	"github.com/pharmonico/backend-gogit/internal/middleware"
 	"github.com/pharmonico/backend-gogit/internal/models"
+	"github.com/pharmonico/backend-gogit/internal/workers"
 	"github.com/pharmonico/backend-gogit/pkg/ncpdp"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -176,6 +180,59 @@ func (h *PrescriptionHandler) Intake(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Prescription inserted successfully with ID: %s", prescriptionID)
 
+	// Subtask 1.1.11: Publish Kafka event: prescription.intake.received
+	// Subtask 1.1.12: Structure event payload with prescription metadata
+	correlationID := middleware.GetCorrelationID(r)
+	if correlationID == "" {
+		// Fallback: generate correlation ID if not found in context
+		correlationID = fmt.Sprintf("intake_%d", time.Now().UnixNano())
+	}
+
+	// Build event payload with prescription metadata
+	eventData := map[string]interface{}{
+		"status": prescription.Status,
+		"patient": map[string]interface{}{
+			"id":            prescription.Patient.ID,
+			"first_name":    prescription.Patient.FirstName,
+			"last_name":     prescription.Patient.LastName,
+			"date_of_birth": prescription.Patient.DateOfBirth,
+		},
+		"prescriber": map[string]interface{}{
+			"id":         prescription.Prescriber.ID,
+			"npi":        prescription.Prescriber.NPI,
+			"dea":        prescription.Prescriber.DEA,
+			"first_name": prescription.Prescriber.FirstName,
+			"last_name":  prescription.Prescriber.LastName,
+		},
+		"medication": map[string]interface{}{
+			"ndc":      prescription.Medication.NDC,
+			"name":     prescription.Medication.Name,
+			"quantity": prescription.Medication.Quantity,
+			"refills":  prescription.Medication.Refills,
+		},
+		"date_written": prescription.DateWritten,
+		"created_at":   prescription.CreatedAt.Format(time.RFC3339),
+	}
+
+	// Add insurance information if available
+	if prescription.Insurance.BIN != "" || prescription.Insurance.MemberID != "" {
+		eventData["insurance"] = map[string]interface{}{
+			"bin":       prescription.Insurance.BIN,
+			"pcn":       prescription.Insurance.PCN,
+			"group_id":  prescription.Insurance.GroupID,
+			"member_id": prescription.Insurance.MemberID,
+			"plan_name": prescription.Insurance.PlanName,
+		}
+	}
+
+	// Create and publish event
+	event := workers.CreateEvent(correlationID, prescriptionID, eventData)
+	if err := workers.PublishEvent(ctx, h.deps.KafkaProducer, kafka.TopicIntakeReceived, prescriptionID, event); err != nil {
+		// Log error but don't fail the request - event publishing is best-effort
+		log.Printf("⚠️  Failed to publish intake event for prescription %s: %v", prescriptionID, err)
+		// Continue processing - the prescription was successfully saved
+	}
+
 	// Subtask 1.1.13: Return { prescription_id }
 	response := models.IntakeResponse{
 		PrescriptionID: prescriptionID,
@@ -189,43 +246,43 @@ func (h *PrescriptionHandler) Intake(w http.ResponseWriter, r *http.Request) {
 
 // validateRequiredFields checks that all required fields are present
 func validateRequiredFields(p *models.Prescription) error {
-	var errors []string
+	var validationErrors []string
 
 	// Patient required fields
 	if p.Patient.FirstName == "" {
-		errors = append(errors, "patient.first_name is required")
+		validationErrors = append(validationErrors, "patient.first_name is required")
 	}
 	if p.Patient.LastName == "" {
-		errors = append(errors, "patient.last_name is required")
+		validationErrors = append(validationErrors, "patient.last_name is required")
 	}
 	if p.Patient.DateOfBirth == "" {
-		errors = append(errors, "patient.date_of_birth is required")
+		validationErrors = append(validationErrors, "patient.date_of_birth is required")
 	}
 
 	// Prescriber required fields
 	if p.Prescriber.NPI == "" {
-		errors = append(errors, "prescriber.npi is required")
+		validationErrors = append(validationErrors, "prescriber.npi is required")
 	}
 	if p.Prescriber.FirstName == "" {
-		errors = append(errors, "prescriber.first_name is required")
+		validationErrors = append(validationErrors, "prescriber.first_name is required")
 	}
 	if p.Prescriber.LastName == "" {
-		errors = append(errors, "prescriber.last_name is required")
+		validationErrors = append(validationErrors, "prescriber.last_name is required")
 	}
 
 	// Medication required fields
 	if p.Medication.NDC == "" {
-		errors = append(errors, "medication.ndc is required")
+		validationErrors = append(validationErrors, "medication.ndc is required")
 	}
 	if p.Medication.Name == "" {
-		errors = append(errors, "medication.name is required")
+		validationErrors = append(validationErrors, "medication.name is required")
 	}
 	if p.Medication.Quantity == 0 {
-		errors = append(errors, "medication.quantity is required")
+		validationErrors = append(validationErrors, "medication.quantity is required")
 	}
 
-	if len(errors) > 0 {
-		return fmt.Errorf(strings.Join(errors, "; "))
+	if len(validationErrors) > 0 {
+		return errors.New(strings.Join(validationErrors, "; "))
 	}
 
 	return nil
