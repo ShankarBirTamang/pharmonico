@@ -39,8 +39,8 @@ func InitializeWorker(cfg *config.Config) (*Worker, error) {
 	worker.MongoClient = mongoClient
 	log.Println("✅ MongoDB connected successfully")
 
-	// Connect to PostgreSQL (for audit logs only - NOT for job queues)
-	// Note: We use Kafka for event-driven processing, not PostgreSQL job queues
+	// Connect to PostgreSQL (for audit logs only)
+	// Note: We use Kafka for all event queues, PostgreSQL only for audit logs
 	log.Println("🔌 Connecting to PostgreSQL (audit logs only)...")
 	pgClient, err := database.ConnectPostgres(cfg.PostgresDSN)
 	if err != nil {
@@ -85,8 +85,9 @@ func InitializeWorker(cfg *config.Config) (*Worker, error) {
 }
 
 // Start begins the worker loop that polls Kafka and processes messages
-// Note: This worker uses Kafka event-driven architecture, NOT PostgreSQL job queue polling
-// Task 8.4: Removed PostgreSQL polling loops - all processing is now Kafka-based
+// Task 1.2.1: Implement worker ticker loop (10-second interval)
+// Task 1.2.3: Batch size = 10 jobs
+// Note: This worker uses Kafka event-driven architecture
 func (w *Worker) Start(ctx context.Context) error {
 	// Get all registered topics
 	topics := w.Registry.GetTopics()
@@ -100,33 +101,53 @@ func (w *Worker) Start(ctx context.Context) error {
 		return err
 	}
 
-	log.Println("🔄 Starting worker loop...")
+	log.Println("🔄 Starting worker ticker loop (10-second interval)...")
 	log.Println("✅ Worker is running. Press Ctrl+C to stop.")
 
-	// Main worker loop
+	// Task 1.2.1: Implement worker ticker loop (10-second interval)
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	// Process initial batch immediately
+	w.processBatch(ctx)
+
+	// Main worker loop with ticker
 	for {
 		select {
 		case <-ctx.Done():
 			log.Println("🛑 Worker loop stopped (context cancelled)")
 			return nil
-		default:
-			// Poll for messages with a 1 second timeout
-			msg, err := w.KafkaConsumer.Poll(1000)
-			if err != nil {
-				log.Printf("❌ Error polling Kafka: %v", err)
-				// Continue loop to retry
-				time.Sleep(1 * time.Second)
-				continue
-			}
-
-			// No message available (timeout)
-			if msg == nil {
-				continue
-			}
-
-			// Process the message
-			w.processMessage(ctx, msg)
+		case <-ticker.C:
+			// Task 1.2.1: Process batch every 10 seconds
+			w.processBatch(ctx)
 		}
+	}
+}
+
+// processBatch processes a batch of messages from Kafka
+// Task 1.2.3: Batch size = 10 jobs
+func (w *Worker) processBatch(ctx context.Context) {
+	// Task 1.2.3: Batch size = 10 jobs
+	batchSize := 10
+	timeoutMs := 1000 // 1 second timeout for each poll
+
+	// Poll for up to 10 messages
+	messages, err := w.KafkaConsumer.PollBatch(timeoutMs, batchSize)
+	if err != nil {
+		log.Printf("❌ Error polling Kafka batch: %v", err)
+		return
+	}
+
+	if len(messages) == 0 {
+		log.Println("📭 No messages available in this batch")
+		return
+	}
+
+	log.Printf("📋 Processing batch of %d messages...", len(messages))
+
+	// Process each message in the batch
+	for _, msg := range messages {
+		w.processMessage(ctx, msg)
 	}
 }
 
@@ -162,6 +183,7 @@ func (w *Worker) processMessage(ctx context.Context, msg *kafka.Message) {
 	// 8.3.3: Next Kafka event is emitted by the handler (if applicable)
 	log.Printf("✅ [8.3.3] Successfully processed message: topic=%s, offset=%d (next event emitted by handler)", msg.Topic, msg.Offset)
 }
+
 
 // Shutdown gracefully closes all connections
 func (w *Worker) Shutdown(ctx context.Context) error {

@@ -72,7 +72,8 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	// Start worker loop in a goroutine
+	// Start Kafka-based worker loop in a goroutine
+	// Task 1.2: Worker uses Kafka with 10-second ticker and batch processing
 	workerErr := make(chan error, 1)
 	go func() {
 		workerErr <- worker.Start(ctx)
@@ -89,6 +90,7 @@ func main() {
 		if err != nil {
 			log.Printf("❌ Worker error: %v", err)
 		}
+		cancel() // Cancel context to stop worker loop
 	}
 
 	// Graceful shutdown

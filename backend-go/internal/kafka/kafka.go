@@ -73,6 +73,8 @@ type Consumer interface {
 	Subscribe(topics []string) error
 	// Poll retrieves the next message (blocks up to timeoutMs)
 	Poll(timeoutMs int) (*Message, error)
+	// PollBatch retrieves up to batchSize messages (blocks up to timeoutMs)
+	PollBatch(timeoutMs int, batchSize int) ([]*Message, error)
 	// Commit marks the current message as processed
 	Commit() error
 	// Close gracefully shuts down the consumer
@@ -226,6 +228,39 @@ func (c *kafkaConsumer) Poll(timeoutMs int) (*Message, error) {
 		Partition: int32(kafkaMsg.Partition),
 		Offset:    kafkaMsg.Offset,
 	}, nil
+}
+
+// PollBatch retrieves up to batchSize messages (blocks up to timeoutMs)
+// Task 1.2.3: Batch size = 10 jobs
+func (c *kafkaConsumer) PollBatch(timeoutMs int, batchSize int) ([]*Message, error) {
+	if c.reader == nil {
+		return nil, &ConsumerNotSubscribedError{}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutMs)*time.Millisecond)
+	defer cancel()
+
+	var messages []*Message
+	for i := 0; i < batchSize; i++ {
+		kafkaMsg, err := c.reader.ReadMessage(ctx)
+		if err != nil {
+			if err == context.DeadlineExceeded {
+				// Timeout is not an error, just return what we have
+				break
+			}
+			return nil, err
+		}
+
+		messages = append(messages, &Message{
+			Topic:     kafkaMsg.Topic,
+			Key:       kafkaMsg.Key,
+			Value:     kafkaMsg.Value,
+			Partition: int32(kafkaMsg.Partition),
+			Offset:    kafkaMsg.Offset,
+		})
+	}
+
+	return messages, nil
 }
 
 // Commit marks the current message as processed
