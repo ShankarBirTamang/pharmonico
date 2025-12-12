@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/config"
-	"github.com/pharmonico/backend-gogit/internal/database"
-	"github.com/pharmonico/backend-gogit/internal/kafka"
-	"github.com/pharmonico/backend-gogit/internal/workers"
+	"github.com/phil-my-meds/backend-gogit/internal/config"
+	"github.com/phil-my-meds/backend-gogit/internal/database"
+	"github.com/phil-my-meds/backend-gogit/internal/kafka"
+	"github.com/phil-my-meds/backend-gogit/internal/workers"
 )
 
 // Worker holds all the dependencies for the worker service
@@ -32,7 +32,7 @@ func InitializeWorker(cfg *config.Config) (*Worker, error) {
 
 	// Connect to MongoDB
 	log.Println("🔌 Connecting to MongoDB...")
-	mongoClient, err := database.ConnectMongo(cfg.MongoDBURI, "pharmonico")
+	mongoClient, err := database.ConnectMongo(cfg.MongoDBURI, "phil-my-meds")
 	if err != nil {
 		return nil, err
 	}
@@ -64,14 +64,14 @@ func InitializeWorker(cfg *config.Config) (*Worker, error) {
 	for i, broker := range brokers {
 		brokers[i] = strings.TrimSpace(broker)
 	}
-	kafkaConsumerConfig := kafka.NewConfig(brokers, "pharmonico-worker", "pharmonico-worker-consumer")
+	kafkaConsumerConfig := kafka.NewConfig(brokers, "phil-my-meds-worker", "phil-my-meds-worker-consumer")
 	kafkaConsumer := kafka.NewConsumer(kafkaConsumerConfig)
 	worker.KafkaConsumer = kafkaConsumer
 	log.Println("✅ Kafka consumer initialized successfully")
 
 	// Initialize Kafka producer (for emitting events after processing)
 	log.Println("🔌 Initializing Kafka producer...")
-	kafkaProducerConfig := kafka.NewConfig(brokers, "pharmonico-worker", "pharmonico-worker-producer")
+	kafkaProducerConfig := kafka.NewConfig(brokers, "phil-my-meds-worker", "phil-my-meds-worker-producer")
 	kafkaProducer := kafka.NewProducer(kafkaProducerConfig)
 	worker.KafkaProducer = kafkaProducer
 	log.Println("✅ Kafka producer initialized successfully")

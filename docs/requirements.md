@@ -1,4 +1,4 @@
-# Pharmonico - Prescription Fulfillment System Requirements Document
+# PhilMyMeds - Prescription Fulfillment System Requirements Document
 
 ## 1. Project Overview
 

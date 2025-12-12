@@ -1,4 +1,4 @@
-// Package main is the entry point for the Pharmonico API server
+// Package main is the entry point for the PhilMyMeds API server
 package main
 
 import (
@@ -9,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/config"
+	"github.com/phil-my-meds/backend-gogit/internal/config"
 )
 
 func main() {
-	log.Println("🚀 Starting Pharmonico API Server...")
+	log.Println("🚀 Starting PhilMyMeds API Server...")
 
 	// Load configuration
 	cfg := config.Load()

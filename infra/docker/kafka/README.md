@@ -1,6 +1,6 @@
 # Kafka Configuration (KRaft Mode)
 
-Apache Kafka provides event streaming for Pharmonico's async workflows.
+Apache Kafka provides event streaming for PhilMyMeds's async workflows.
 Running in **KRaft mode** - no Zookeeper dependency required.
 
 ## What is KRaft?

@@ -30,5 +30,5 @@ go run ./cmd/mongo-seed
 ## Notes
 
 - The script will skip collections that already contain data
-- All collections are seeded into the `pharmonico` database
+- All collections are seeded into the `phil-my-meds` database
 

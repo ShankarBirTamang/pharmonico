@@ -1,5 +1,5 @@
 # =============================================================================
-# Pharmonico Backend - Multi-stage Dockerfile
+# PhilMyMeds Backend - Multi-stage Dockerfile
 # Builds: API, Worker, and Scheduler services
 # =============================================================================
 

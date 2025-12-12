@@ -34,8 +34,8 @@ func Load() *Config {
 	return &Config{
 		AppEnv:         getEnv("APP_ENV", "development"),
 		Port:           getEnv("PORT", "8080"),
-		MongoDBURI:     getEnv("MONGODB_URI", "mongodb://localhost:27017/pharmonico"),
-		PostgresDSN:    getEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/pharmonico?sslmode=disable"),
+		MongoDBURI:     getEnv("MONGODB_URI", "mongodb://localhost:27017/phil-my-meds"),
+		PostgresDSN:    getEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/phil-my-meds?sslmode=disable"),
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
 		KafkaBrokers:   getEnv("KAFKA_BROKERS", "localhost:29092"),
 		MinIOEndpoint:  getEnv("MINIO_ENDPOINT", "localhost:9000"),

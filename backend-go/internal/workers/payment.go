@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pharmonico/backend-gogit/internal/database"
-	"github.com/pharmonico/backend-gogit/internal/kafka"
+	"github.com/phil-my-meds/backend-gogit/internal/database"
+	"github.com/phil-my-meds/backend-gogit/internal/kafka"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -111,7 +111,7 @@ func (w *PaymentWorker) Handle(ctx context.Context, msg *kafka.Message) error {
 
 	// Create payment link (simplified - actual implementation will integrate with Stripe)
 	paymentLinkID := uuid.New().String()
-	paymentLinkURL := "https://pay.pharmonico.com/" + paymentLinkID
+	paymentLinkURL := "https://pay.phil-my-meds.com/" + paymentLinkID
 
 	// Store payment link in MongoDB
 	paymentCollection := w.mongoClient.GetCollection("payments")

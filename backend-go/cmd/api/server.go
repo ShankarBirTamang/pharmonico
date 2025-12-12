@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/config"
-	"github.com/pharmonico/backend-gogit/internal/database"
-	"github.com/pharmonico/backend-gogit/internal/kafka"
+	"github.com/phil-my-meds/backend-gogit/internal/config"
+	"github.com/phil-my-meds/backend-gogit/internal/database"
+	"github.com/phil-my-meds/backend-gogit/internal/kafka"
 )
 
 // Server holds all the dependencies for the API server
@@ -31,7 +31,7 @@ func InitializeServer(cfg *config.Config) (*Server, error) {
 
 	// Connect to MongoDB
 	log.Println("🔌 Connecting to MongoDB...")
-	mongoClient, err := database.ConnectMongo(cfg.MongoDBURI, "pharmonico")
+	mongoClient, err := database.ConnectMongo(cfg.MongoDBURI, "phil-my-meds")
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func InitializeServer(cfg *config.Config) (*Server, error) {
 	for i, broker := range brokers {
 		brokers[i] = strings.TrimSpace(broker)
 	}
-	kafkaConfig := kafka.NewConfig(brokers, "pharmonico-api", "pharmonico-api-producer")
+	kafkaConfig := kafka.NewConfig(brokers, "phil-my-meds-api", "phil-my-meds-api-producer")
 	kafkaProducer := kafka.NewProducer(kafkaConfig)
 	server.KafkaProducer = kafkaProducer
 	log.Println("✅ Kafka producer initialized successfully")

@@ -28,7 +28,7 @@ export function Header() {
               <span className="text-xl font-bold text-white">P</span>
             </div>
             <span className="text-xl font-bold text-slate-900 dark:text-white">
-              Pharmonico
+              PhilMyMeds
             </span>
           </Link>
 

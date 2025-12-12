@@ -7,10 +7,10 @@ export function Footer() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-teal-500">
               <span className="text-sm font-bold text-white">P</span>
             </div>
-            <span className="font-semibold text-slate-900 dark:text-white">Pharmonico</span>
+            <span className="font-semibold text-slate-900 dark:text-white">PhilMyMeds</span>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            © {new Date().getFullYear()} Pharmonico. All rights reserved.
+            © {new Date().getFullYear()} PhilMyMeds. All rights reserved.
           </p>
         </div>
       </div>

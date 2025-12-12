@@ -7,8 +7,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/database"
-	"github.com/pharmonico/backend-gogit/internal/kafka"
+	"github.com/phil-my-meds/backend-gogit/internal/database"
+	"github.com/phil-my-meds/backend-gogit/internal/kafka"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

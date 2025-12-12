@@ -1,4 +1,4 @@
-# **Pharmonico 💊 — Prescription Fulfillment Learning Platform**
+# **PhilMyMeds 💊 — Prescription Fulfillment Learning Platform**
 
 *A complete end-to-end simulation of U.S. specialty pharmacy workflows, NCPDP SCRIPT intake, insurance adjudication, routing, payments, and shipping.*
 
@@ -23,7 +23,7 @@ This project is designed for **learning** modern healthcare tech stacks, includi
 
 # 🎯 **Overview**
 
-Pharmonico simulates an end-to-end prescription lifecycle:
+PhilMyMeds simulates an end-to-end prescription lifecycle:
 
 ```
 Prescription Intake → Validation → Enrollment → Pharmacy Routing
@@ -45,7 +45,7 @@ It models real-world specialty pharmacy workflows including:
 
 # 🏗️ **Architecture (Updated with Redis & Kafka)**
 
-Pharmonico now uses an **event-driven microservices-inspired** pipeline supported by:
+PhilMyMeds now uses an **event-driven microservices-inspired** pipeline supported by:
 
 * **Redis** → caching, sessions, magic links, rate limits
 * **Kafka** → async workflow orchestration
@@ -119,7 +119,7 @@ Pharmonico now uses an **event-driven microservices-inspired** pipeline supporte
 
 ```bash
 git clone <repo-url>
-cd pharmonico
+cd phil-my-meds
 
 make dev
 ```
@@ -182,7 +182,7 @@ make clean
 # 📁 **Project Structure**
 
 ```
-pharmonico/
+phil-my-meds/
 ├── backend-go/
 │   ├── cmd/
 │   │   ├── api/
@@ -279,7 +279,7 @@ pharmonico/
 
 # 📚 **Learning Objectives**
 
-Through Pharmonico you will learn:
+Through PhilMyMeds you will learn:
 
 ### 🏥 **Healthcare**
 

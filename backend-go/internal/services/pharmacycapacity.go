@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/database"
+	"github.com/phil-my-meds/backend-gogit/internal/database"
 )
 
 // PharmacyCapacityService handles pharmacy capacity tracking in Redis

@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/config"
-	"github.com/pharmonico/backend-gogit/internal/database"
-	"github.com/pharmonico/backend-gogit/internal/services"
+	"github.com/phil-my-meds/backend-gogit/internal/config"
+	"github.com/phil-my-meds/backend-gogit/internal/database"
+	"github.com/phil-my-meds/backend-gogit/internal/services"
 )
 
 func main() {
@@ -195,6 +195,6 @@ func main() {
 	log.Println("   ✓ Pharmacy capacity store")
 	log.Println("   ✓ Rate limiter functionality")
 	log.Println("\n💡 To view Redis logs, check the Redis container:")
-	log.Println("   docker logs pharmonico-redis")
+	log.Println("   docker logs phil-my-meds-redis")
 }
 

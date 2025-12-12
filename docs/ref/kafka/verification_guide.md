@@ -138,7 +138,7 @@ go run cmd/test-kafka-consumer/main.go
 
 1. **Open Kafka UI**: Navigate to http://localhost:8085
 
-2. **Select Cluster**: The cluster "pharmonico-cluster" should be visible
+2. **Select Cluster**: The cluster "phil-my-meds-cluster" should be visible
 
 ### View Topics
 
@@ -212,7 +212,7 @@ go run cmd/test-kafka-consumer/main.go
 
 **Problem**: Message not appearing in Kafka UI
 - **Solution**: Wait a few seconds for Kafka UI to refresh
-- **Solution**: Check Kafka logs: `docker logs pharmonico-kafka`
+- **Solution**: Check Kafka logs: `docker logs phil-my-meds-kafka`
 
 ### Consumer Issues
 
@@ -230,11 +230,11 @@ go run cmd/test-kafka-consumer/main.go
 **Problem**: Kafka UI not accessible
 - **Solution**: Check container is running: `docker ps | grep kafka-ui`
 - **Solution**: Verify port 8085 is not in use by another service
-- **Solution**: Check logs: `docker logs pharmonico-kafka-ui`
+- **Solution**: Check logs: `docker logs phil-my-meds-kafka-ui`
 
 **Problem**: Topic not visible in Kafka UI
 - **Solution**: Refresh the page
-- **Solution**: Check topic was created: `docker exec pharmonico-kafka kafka-topics --bootstrap-server localhost:9092 --list`
+- **Solution**: Check topic was created: `docker exec phil-my-meds-kafka kafka-topics --bootstrap-server localhost:9092 --list`
 
 ---
 

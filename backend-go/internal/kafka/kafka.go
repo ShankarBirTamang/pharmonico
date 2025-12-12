@@ -10,7 +10,7 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-// Topic constants - all Kafka topics used in Pharmonico
+// Topic constants - all Kafka topics used in PhilMyMeds
 const (
 	// TopicIntakeReceived - published when a new prescription is received
 	TopicIntakeReceived = "prescription.intake.received"

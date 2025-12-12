@@ -1,8 +1,8 @@
-# 🔄 **Pharmonico — Improved End-to-End Architecture**
+# 🔄 **PhilMyMeds — Improved End-to-End Architecture**
 
 ## **Architecture Overview**
 
-Pharmonico follows a **microservices architecture** where:
+PhilMyMeds follows a **microservices architecture** where:
 - **Pharmacy handles manufacturer program adjudication** (not our enrollment system)
 - **Kafka** provides event-driven communication
 - **Redis** handles caching and session management
@@ -15,7 +15,7 @@ Pharmonico follows a **microservices architecture** where:
 
 ### **1.1 Provider Submits Prescription**
 - **Real world**: eRx via NCPDP SCRIPT standard
-- **Pharmonico**: Mock data or Gemini-generated NCPDP payload
+- **PhilMyMeds**: Mock data or Gemini-generated NCPDP payload
 
 ### **1.2 API Receives Prescription**
 ```
@@ -115,7 +115,7 @@ Body: { "prescription_id": "rx_abc123" }
    ```
 3. Create enrollment record in MongoDB with `status = "pending"`
 4. Send email via **SendGrid** and SMS via **Twilio**:
-   - Magic link URL: `https://enroll.pharmonico.com/enroll/{token}`
+   - Magic link URL: `https://enroll.phil-my-meds.com/enroll/{token}`
    - Link expires in 48 hours
 
 ### **3.2 Patient Opens Magic Link**
@@ -475,7 +475,7 @@ This link expires in 24 hours.
 
 **SMS:**
 ```
-Pharmonico: Your Humira Rx is ready. Final copay: $5.00 (saved $1,495!). 
+PhilMyMeds: Your Humira Rx is ready. Final copay: $5.00 (saved $1,495!). 
 Pay now: {short_link}
 ```
 

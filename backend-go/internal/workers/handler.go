@@ -4,7 +4,7 @@ package workers
 import (
 	"context"
 
-	"github.com/pharmonico/backend-gogit/internal/kafka"
+	"github.com/phil-my-meds/backend-gogit/internal/kafka"
 )
 
 // Handler defines the interface for processing Kafka messages

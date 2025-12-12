@@ -1,5 +1,5 @@
 /**
- * Utility functions for the Pharmonico frontend
+ * Utility functions for the PhilMyMeds frontend
  */
 
 /**

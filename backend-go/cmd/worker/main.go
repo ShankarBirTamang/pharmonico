@@ -1,4 +1,4 @@
-// Package main is the entry point for the Pharmonico Worker service
+// Package main is the entry point for the PhilMyMeds Worker service
 package main
 
 import (
@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/config"
-	"github.com/pharmonico/backend-gogit/internal/workers"
+	"github.com/phil-my-meds/backend-gogit/internal/config"
+	"github.com/phil-my-meds/backend-gogit/internal/workers"
 )
 
 func main() {
-	log.Println("🚀 Starting Pharmonico Worker Service...")
+	log.Println("🚀 Starting PhilMyMeds Worker Service...")
 
 	// Load configuration
 	cfg := config.Load()

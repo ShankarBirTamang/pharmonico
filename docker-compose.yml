@@ -1,5 +1,5 @@
 # ============================================
-# Pharmonico Docker Compose Configuration
+# PhilMyMeds Docker Compose Configuration
 # Full development environment with hot reload
 # ============================================
 
@@ -11,7 +11,7 @@ services:
   # MongoDB - Business data (prescriptions, patients, pharmacies)
   mongodb:
     image: mongo:7.0
-    container_name: pharmonico-mongodb
+    container_name: phil-my-meds-mongodb
     ports:
       - "27017:27017"
     volumes:
@@ -23,19 +23,19 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # PostgreSQL -  audit logs, users
   postgres:
     image: postgres:16-alpine
-    container_name: pharmonico-postgres
+    container_name: phil-my-meds-postgres
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: pharmonico
+      POSTGRES_DB: phil-my-meds
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -45,13 +45,13 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # Redis - Caching, sessions, rate limiting
   redis:
     image: redis:7-alpine
-    container_name: pharmonico-redis
+    container_name: phil-my-meds-redis
     ports:
       - "6379:6379"
     volumes:
@@ -65,7 +65,7 @@ services:
       retries: 5
       start_period: 5s
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # ==========================================
@@ -75,7 +75,7 @@ services:
   # Kafka - Event streaming (KRaft mode - no Zookeeper required)
   kafka:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: pharmonico-kafka
+    container_name: phil-my-meds-kafka
     ports:
       - "9092:9092"
       - "29092:29092"
@@ -115,13 +115,13 @@ services:
       retries: 5
       start_period: 60s
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # Kafka Topic Initialization
   kafka-init:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: pharmonico-kafka-init
+    container_name: phil-my-meds-kafka-init
     depends_on:
       kafka:
         condition: service_healthy
@@ -147,16 +147,16 @@ services:
       kafka-topics --bootstrap-server kafka:9092 --list
       "
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # Kafka UI - Web interface for Kafka cluster management
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: pharmonico-kafka-ui
+    container_name: phil-my-meds-kafka-ui
     ports:
       - "8085:8080"
     environment:
-      KAFKA_CLUSTERS_0_NAME: pharmonico-cluster
+      KAFKA_CLUSTERS_0_NAME: phil-my-meds-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: first
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka:8083
@@ -164,7 +164,7 @@ services:
       kafka:
         condition: service_healthy
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # ==========================================
@@ -174,7 +174,7 @@ services:
   # MinIO - S3-compatible storage
   minio:
     image: minio/minio:latest
-    container_name: pharmonico-minio
+    container_name: phil-my-meds-minio
     ports:
       - "9000:9000"   # API
       - "9001:9001"   # Console
@@ -191,13 +191,13 @@ services:
       retries: 3
       start_period: 10s
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # MinIO Bucket Initialization
   minio-init:
     image: minio/mc:latest
-    container_name: pharmonico-minio-init
+    container_name: phil-my-meds-minio-init
     depends_on:
       minio:
         condition: service_healthy
@@ -218,7 +218,7 @@ services:
       exit 0;
       "
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: "no"
 
   # ==========================================
@@ -228,12 +228,12 @@ services:
   # MailDev - Email testing
   maildev:
     image: maildev/maildev:2.1.0
-    container_name: pharmonico-maildev
+    container_name: phil-my-meds-maildev
     ports:
       - "1080:1080"   # Web UI
       - "1025:1025"   # SMTP
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # ==========================================
@@ -245,13 +245,13 @@ services:
     build:
       context: ./backend-go
       dockerfile: Dockerfile.dev
-    container_name: pharmonico-api
+    container_name: phil-my-meds-api
     ports:
       - "8080:8080"
     environment:
       - APP_ENV=development
-      - MONGODB_URI=mongodb://mongodb:27017/pharmonico
-      - POSTGRES_DSN=postgres://postgres:postgres@postgres:5432/pharmonico?sslmode=disable
+      - MONGODB_URI=mongodb://mongodb:27017/phil-my-meds
+      - POSTGRES_DSN=postgres://postgres:postgres@postgres:5432/phil-my-meds?sslmode=disable
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:9092
       - MINIO_ENDPOINT=minio:9000
@@ -272,7 +272,7 @@ services:
       kafka:
         condition: service_healthy
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # Worker Service (with Air hot reload)
@@ -282,12 +282,12 @@ services:
       dockerfile: Dockerfile.dev
       args:
         SERVICE: worker
-    container_name: pharmonico-worker
+    container_name: phil-my-meds-worker
     environment:
       - APP_ENV=development
       - SERVICE=worker
-      - MONGODB_URI=mongodb://mongodb:27017/pharmonico
-      - POSTGRES_DSN=postgres://postgres:postgres@postgres:5432/pharmonico?sslmode=disable
+      - MONGODB_URI=mongodb://mongodb:27017/phil-my-meds
+      - POSTGRES_DSN=postgres://postgres:postgres@postgres:5432/phil-my-meds?sslmode=disable
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:9092
     volumes:
@@ -301,7 +301,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
   # React Frontend (with Vite hot reload)
@@ -309,7 +309,7 @@ services:
     build:
       context: ./frontend-react
       dockerfile: Dockerfile.dev
-    container_name: pharmonico-frontend
+    container_name: phil-my-meds-frontend
     ports:
       - "5173:5173"
     environment:
@@ -320,7 +320,7 @@ services:
     depends_on:
       - api
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
     restart: unless-stopped
 
 # ==========================================
@@ -328,21 +328,21 @@ services:
 # ==========================================
 volumes:
   mongodb-data:
-    name: pharmonico-mongodb-data
+    name: phil-my-meds-mongodb-data
   postgres-data:
-    name: pharmonico-postgres-data
+    name: phil-my-meds-postgres-data
   redis-data:
-    name: pharmonico-redis-data
+    name: phil-my-meds-redis-data
   kafka-data:
-    name: pharmonico-kafka-data
+    name: phil-my-meds-kafka-data
   minio-data:
-    name: pharmonico-minio-data
+    name: phil-my-meds-minio-data
 
 # ==========================================
 # NETWORKS
 # ==========================================
 networks:
-  pharmonico-network:
-    name: pharmonico-network
+  phil-my-meds-network:
+    name: phil-my-meds-network
     driver: bridge
 

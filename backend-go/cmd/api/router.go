@@ -4,8 +4,8 @@ package main
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/pharmonico/backend-gogit/internal/handlers"
-	appMiddleware "github.com/pharmonico/backend-gogit/internal/middleware"
+	"github.com/phil-my-meds/backend-gogit/internal/handlers"
+	appMiddleware "github.com/phil-my-meds/backend-gogit/internal/middleware"
 )
 
 // setupRouter configures and returns the HTTP router

@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/config"
-	"github.com/pharmonico/backend-gogit/internal/database"
+	"github.com/phil-my-meds/backend-gogit/internal/config"
+	"github.com/phil-my-meds/backend-gogit/internal/database"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 
 	// Test MongoDB connection
 	log.Println("\n📊 Testing MongoDB connection...")
-	mongoClient, err := database.ConnectMongo(cfg.MongoDBURI, "pharmonico")
+	mongoClient, err := database.ConnectMongo(cfg.MongoDBURI, "phil-my-meds")
 	if err != nil {
 		log.Fatalf("❌ MongoDB connection failed: %v", err)
 	}

@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/kafka"
-	"github.com/pharmonico/backend-gogit/internal/middleware"
-	"github.com/pharmonico/backend-gogit/internal/models"
-	"github.com/pharmonico/backend-gogit/internal/workers"
-	"github.com/pharmonico/backend-gogit/pkg/ncpdp"
+	"github.com/phil-my-meds/backend-gogit/internal/kafka"
+	"github.com/phil-my-meds/backend-gogit/internal/middleware"
+	"github.com/phil-my-meds/backend-gogit/internal/models"
+	"github.com/phil-my-meds/backend-gogit/internal/workers"
+	"github.com/phil-my-meds/backend-gogit/pkg/ncpdp"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 

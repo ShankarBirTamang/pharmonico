@@ -1,5 +1,5 @@
 # ============================================
-# Pharmonico Frontend Dockerfile
+# PhilMyMeds Frontend Dockerfile
 # Multi-stage build for React + Vite
 # ============================================
 

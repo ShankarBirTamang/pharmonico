@@ -18,7 +18,7 @@ import (
 
 const (
 	mongoURI = "mongodb://localhost:27017"
-	dbName   = "pharmonico"
+	dbName   = "phil-my-meds"
 )
 
 func main() {

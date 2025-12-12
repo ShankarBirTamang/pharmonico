@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pharmonico/backend-gogit/internal/models"
+	"github.com/phil-my-meds/backend-gogit/internal/models"
 )
 
 // NCPDPScript represents the root element of an NCPDP SCRIPT message

@@ -24,7 +24,7 @@ make pg-seed
 
 ## Environment Variables
 
-- `POSTGRES_DSN` - PostgreSQL connection string (default: `postgres://postgres:postgres@localhost:5432/pharmonico?sslmode=disable`)
+- `POSTGRES_DSN` - PostgreSQL connection string (default: `postgres://postgres:postgres@localhost:5432/phil-my-meds?sslmode=disable`)
 
 ## Seed Data Files
 
@@ -33,6 +33,6 @@ make pg-seed
 ## Notes
 
 - The script will skip tables that already contain data
-- All tables are seeded into the `pharmonico` database
+- All tables are seeded into the `phil-my-meds` database
 - The audit_logs table must exist (created via migrations) before seeding
 

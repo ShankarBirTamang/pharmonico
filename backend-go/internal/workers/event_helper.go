@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pharmonico/backend-gogit/internal/kafka"
+	"github.com/phil-my-meds/backend-gogit/internal/kafka"
 )
 
 // EventMetadata represents common metadata for all events

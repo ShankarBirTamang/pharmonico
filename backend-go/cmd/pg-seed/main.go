@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	defaultPostgresDSN = "postgres://postgres:postgres@localhost:5432/pharmonico?sslmode=disable"
+	defaultPostgresDSN = "postgres://postgres:postgres@localhost:5432/phil-my-meds?sslmode=disable"
 )
 
 func main() {

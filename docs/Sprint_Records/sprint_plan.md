@@ -1,4 +1,4 @@
-# ✅ **Pharmonico — Improved Sprint Plan (16-Week Development Cycle)**
+# ✅ **PhilMyMeds — Improved Sprint Plan (16-Week Development Cycle)**
 
 This plan reflects the **corrected architecture** where **pharmacy handles manufacturer program adjudication**, not our enrollment system.
 
@@ -33,7 +33,7 @@ This plan reflects the **corrected architecture** where **pharmacy handles manuf
 
 Create project structure:
 ```
-pharmonico/
+phil-my-meds/
 ├── backend/
 │   ├── cmd/
 │   │   ├── api/           # Main API server
@@ -122,12 +122,12 @@ services:
   # API Server
   api:
     build: ./backend
-    container_name: pharmonico-api
+    container_name: phil-my-meds-api
     ports:
       - "8080:8080"
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/pharmonico
-      - POSTGRES_URI=postgres://postgres:postgres@postgres:5432/pharmonico
+      - MONGODB_URI=mongodb://mongodb:27017/phil-my-meds
+      - POSTGRES_URI=postgres://postgres:postgres@postgres:5432/phil-my-meds
       - REDIS_URI=redis://redis:6379
       - KAFKA_BROKERS=kafka:9092
       - MINIO_ENDPOINT=minio:9000
@@ -143,15 +143,15 @@ services:
       - minio
     command: air # Hot reload with Air
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # Worker Service
   worker:
     build: ./backend
-    container_name: pharmonico-worker
+    container_name: phil-my-meds-worker
     environment:
-      - MONGODB_URI=mongodb://mongodb:27017/pharmonico
-      - POSTGRES_URI=postgres://postgres:postgres@postgres:5432/pharmonico
+      - MONGODB_URI=mongodb://mongodb:27017/phil-my-meds
+      - POSTGRES_URI=postgres://postgres:postgres@postgres:5432/phil-my-meds
       - REDIS_URI=redis://redis:6379
       - KAFKA_BROKERS=kafka:9092
     volumes:
@@ -163,12 +163,12 @@ services:
       - kafka
     command: go run cmd/worker/main.go
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # React Frontend
   frontend:
     build: ./frontend
-    container_name: pharmonico-frontend
+    container_name: phil-my-meds-frontend
     ports:
       - "3000:3000"
     environment:
@@ -178,63 +178,63 @@ services:
       - /app/node_modules
     command: npm start
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # MongoDB
   mongodb:
     image: mongo:7
-    container_name: pharmonico-mongodb
+    container_name: phil-my-meds-mongodb
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_DATABASE=pharmonico
+      - MONGO_INITDB_DATABASE=phil-my-meds
     volumes:
       - mongodb-data:/data/db
       - ./infra/mongodb/seeds:/docker-entrypoint-initdb.d
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # PostgreSQL
   postgres:
     image: postgres:16
-    container_name: pharmonico-postgres
+    container_name: phil-my-meds-postgres
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=pharmonico
+      - POSTGRES_DB=phil-my-meds
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./infra/postgres/migrations:/docker-entrypoint-initdb.d
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # Redis
   redis:
     image: redis:7-alpine
-    container_name: pharmonico-redis
+    container_name: phil-my-meds-redis
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis-data:/data
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # Kafka + Zookeeper
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
-    container_name: pharmonico-zookeeper
+    container_name: phil-my-meds-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
-    container_name: pharmonico-kafka
+    container_name: phil-my-meds-kafka
     depends_on:
       - zookeeper
     ports:
@@ -245,12 +245,12 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # MinIO (S3-compatible storage)
   minio:
     image: minio/minio:latest
-    container_name: pharmonico-minio
+    container_name: phil-my-meds-minio
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -261,22 +261,22 @@ services:
       - minio-data:/data
     command: server /data --console-address ":9001"
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # Maildev (Email testing)
   maildev:
     image: maildev/maildev:latest
-    container_name: pharmonico-maildev
+    container_name: phil-my-meds-maildev
     ports:
       - "1080:1080"  # Web UI
       - "1025:1025"  # SMTP
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
   # Nginx (Optional reverse proxy)
   nginx:
     image: nginx:alpine
-    container_name: pharmonico-nginx
+    container_name: phil-my-meds-nginx
     ports:
       - "80:80"
     volumes:
@@ -285,7 +285,7 @@ services:
       - api
       - frontend
     networks:
-      - pharmonico-network
+      - phil-my-meds-network
 
 volumes:
   mongodb-data:
@@ -294,7 +294,7 @@ volumes:
   minio-data:
 
 networks:
-  pharmonico-network:
+  phil-my-meds-network:
     driver: bridge
 ```
 
@@ -577,8 +577,8 @@ dev-down:
 
 seed:
 	@echo "Seeding databases..."
-	docker exec pharmonico-mongodb mongosh pharmonico /docker-entrypoint-initdb.d/seed.js
-	docker exec pharmonico-postgres psql -U postgres -d pharmonico -f /docker-entrypoint-initdb.d/002_seed_data.sql
+	docker exec phil-my-meds-mongodb mongosh phil-my-meds /docker-entrypoint-initdb.d/seed.js
+	docker exec phil-my-meds-postgres psql -U postgres -d phil-my-meds -f /docker-entrypoint-initdb.d/002_seed_data.sql
 	@echo "✅ Databases seeded"
 
 test:
@@ -997,7 +997,7 @@ func (h *Handler) InitiateEnrollment(c *gin.Context) {
     h.repo.CreateEnrollment(enrollment)
     
     // 5. Send email/SMS
-    magicLink := fmt.Sprintf("https://enroll.pharmonico.com/enroll/%s", token)
+    magicLink := fmt.Sprintf("https://enroll.phil-my-meds.com/enroll/%s", token)
     h.notificationService.SendEnrollmentInvite(rx.Patient, magicLink)
     
     c.JSON(200, gin.H{"enrollment_id": enrollment.ID, "magic_link": magicLink})
@@ -1254,7 +1254,7 @@ func (h *Handler) UploadInsuranceCard(c *gin.Context) {
     
     info, err := h.minio.PutObject(
         ctx,
-        "pharmonico-phi",
+        "phil-my-meds-phi",
         objectName,
         encryptedData,
         -1,
@@ -2064,8 +2064,8 @@ func (s *PaymentService) CreatePaymentLink(prescriptionID string) (*models.Payme
     params := &stripe.CheckoutSessionParams{
         PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
         Mode:              stripe.String(string(stripe.CheckoutSessionModePayment)),
-        SuccessURL:        stripe.String("https://pharmonico.com/payment/success?session_id={CHECKOUT_SESSION_ID}"),
-        CancelURL:         stripe.String("https://pharmonico.com/payment/cancel"),
+        SuccessURL:        stripe.String("https://phil-my-meds.com/payment/success?session_id={CHECKOUT_SESSION_ID}"),
+        CancelURL:         stripe.String("https://phil-my-meds.com/payment/cancel"),
         CustomerEmail:     stripe.String(rx.Patient.Email),
         LineItems: []*stripe.CheckoutSessionLineItemParams{
             {
@@ -2241,7 +2241,7 @@ func (s *NotificationService) SendPaymentLink(rx *models.Prescription, payment *
     
     err := s.sendgrid.Send(Email{
         To:           rx.Patient.Email,
-        From:         "noreply@pharmonico.com",
+        From:         "noreply@phil-my-meds.com",
         Subject:      fmt.Sprintf("Complete Your Payment - $%.2f Copay", payment.Amount),
         TemplateName: "payment_request",
         Data:         emailData,
@@ -2249,7 +2249,7 @@ func (s *NotificationService) SendPaymentLink(rx *models.Prescription, payment *
     
     // SMS notification
     smsMessage := fmt.Sprintf(
-        "Pharmonico: Your %s Rx is ready. Final copay: $%.2f (saved $%.0f!). Pay now: %s",
+        "PhilMyMeds: Your %s Rx is ready. Final copay: $%.2f (saved $%.0f!). Pay now: %s",
         rx.Medication.DrugName,
         payment.Amount,
         adjudication.CostBreakdown.PatientSavings,
@@ -2349,7 +2349,7 @@ func (s *NotificationService) SendPaymentLink(rx *models.Prescription, payment *
         
         <p><small>This payment link expires in {{expires_in}}.</small></p>
         
-        <p>Questions? Contact us at support@pharmonico.com or (555) 123-4567.</p>
+        <p>Questions? Contact us at support@phil-my-meds.com or (555) 123-4567.</p>
     </div>
 </body>
 </html>
@@ -2897,7 +2897,7 @@ func (s *NotificationService) SendShippingNotification(rx *models.Prescription, 
     
     s.sendgrid.Send(Email{
         To:           rx.Patient.Email,
-        From:         "noreply@pharmonico.com",
+        From:         "noreply@phil-my-meds.com",
         Subject:      "Your Prescription Has Shipped! 📦",
         TemplateName: "shipping_notification",
         Data:         emailData,
@@ -2905,7 +2905,7 @@ func (s *NotificationService) SendShippingNotification(rx *models.Prescription, 
     
     // SMS
     smsMessage := fmt.Sprintf(
-        "Pharmonico: Your %s has shipped via %s. Track: %s",
+        "PhilMyMeds: Your %s has shipped via %s. Track: %s",
         rx.Medication.DrugName,
         shipment.Carrier,
         shortenURL(shipment.TrackingURL),
@@ -2932,7 +2932,7 @@ func (s *NotificationService) SendDeliveryConfirmation(rx *models.Prescription, 
     
     s.sendgrid.Send(Email{
         To:           rx.Patient.Email,
-        From:         "noreply@pharmonico.com",
+        From:         "noreply@phil-my-meds.com",
         Subject:      "Your Prescription Has Been Delivered! ✅",
         TemplateName: "delivery_confirmation",
         Data:         emailData,
@@ -2940,7 +2940,7 @@ func (s *NotificationService) SendDeliveryConfirmation(rx *models.Prescription, 
     
     // SMS
     smsMessage := fmt.Sprintf(
-        "Pharmonico: Your %s prescription has been delivered! Thank you for using our service.",
+        "PhilMyMeds: Your %s prescription has been delivered! Thank you for using our service.",
         rx.Medication.DrugName,
     )
     
@@ -3130,7 +3130,7 @@ export const Dashboard = () => {
   return (
     <DashboardLayout>
       <Header>
-        <Typography variant="h4">Pharmonico Operations Dashboard</Typography>
+        <Typography variant="h4">PhilMyMeds Operations Dashboard</Typography>
         <UserMenu />
       </Header>
       
@@ -3681,7 +3681,7 @@ func (r *Repository) GetPrescriptionBasic(id string) (*models.Prescription, erro
 
 **README.md**:
 ````markdown
-# Pharmonico - Prescription Fulfillment System
+# PhilMyMeds - Prescription Fulfillment System
 
 A complete prescription fulfillment platform that handles the entire workflow from intake to delivery.
 
@@ -3714,8 +3714,8 @@ A complete prescription fulfillment platform that handles the entire workflow fr
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/pharmonico.git
-cd pharmonico
+git clone https://github.com/your-org/phil-my-meds.git
+cd phil-my-meds
 
 # Start development environment
 make dev
@@ -3803,7 +3803,7 @@ POST /enrollment/initiate
 Response:
 {
   "enrollment_id": "enr_xyz",
-  "magic_link": "https://enroll.pharmonico.com/enroll/token"
+  "magic_link": "https://enroll.phil-my-meds.com/enroll/token"
 }
 ```
 
@@ -3823,7 +3823,7 @@ version: '3.8'
 
 services:
   api:
-    image: pharmonico/api:latest
+    image: phil-my-meds/api:latest
     restart: always
     environment:
       - ENVIRONMENT=production
@@ -3846,8 +3846,8 @@ services:
 ```bash
 # .env.example
 # Database
-MONGODB_URI=mongodb://localhost:27017/pharmonico
-POSTGRES_URI=postgres://user:pass@localhost:5432/pharmonico
+MONGODB_URI=mongodb://localhost:27017/phil-my-meds
+POSTGRES_URI=postgres://user:pass@localhost:5432/phil-my-meds
 REDIS_URI=redis://localhost:6379
 
 # Kafka
@@ -3998,7 +3998,7 @@ By completing this project, you will have:
 
 ---
 
-**🎉 Congratulations on completing Pharmonico!**
+**🎉 Congratulations on completing PhilMyMeds!**
 
 This project demonstrates enterprise-level software engineering skills and deep understanding of:
 - Healthcare system workflows

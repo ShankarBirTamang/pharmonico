@@ -1,5 +1,5 @@
 # =============================================================================
-# Pharmonico Backend - Development Dockerfile with Air hot reload
+# PhilMyMeds Backend - Development Dockerfile with Air hot reload
 # Supports both API and Worker services via build arg
 # =============================================================================
 

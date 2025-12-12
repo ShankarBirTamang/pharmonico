@@ -1,4 +1,4 @@
-module github.com/pharmonico/backend-gogit
+module github.com/phil-my-meds/backend-gogit
 
 go 1.23.0
 

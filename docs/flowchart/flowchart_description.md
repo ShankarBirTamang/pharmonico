@@ -1,11 +1,11 @@
-Here is a **clear explanation of the Pharmonico flowchart**, based on the requirements, architecture, and workflow described inside both documents you uploaded.
+Here is a **clear explanation of the PhilMyMeds flowchart**, based on the requirements, architecture, and workflow described inside both documents you uploaded.
 (Your flowchart image wasn’t provided here, so I am explaining the *official* improved workflow from the docs you shared.)
 
 ---
 
-# ✅ **Pharmonico Flowchart — Simple & Clear Explanation**
+# ✅ **PhilMyMeds Flowchart — Simple & Clear Explanation**
 
-Pharmonico simulates a **real specialty pharmacy** prescription pipeline.
+PhilMyMeds simulates a **real specialty pharmacy** prescription pipeline.
 The full flow has **7 major stages**, each with workers, Kafka events, Redis caching, and MongoDB writes.
 
 Below is the **easy-to-understand explanation** of each stage in the flowchart.
@@ -124,7 +124,7 @@ Outputs:
 * Discount applied
 * Final adjusted copay
 
-Pharmacy sends complete breakdown back to Pharmonico.
+Pharmacy sends complete breakdown back to PhilMyMeds.
 
 Outcome → Status: **adjudicated**
 Kafka: **insurance.adjudication.completed**

@@ -1,4 +1,4 @@
-// Package main is the entry point for the Pharmonico Scheduler service.
+// Package main is the entry point for the PhilMyMeds Scheduler service.
 // The scheduler handles cron jobs and periodic maintenance tasks.
 //
 // NOTE: This scheduler is NOT for PostgreSQL job queue polling.
@@ -21,7 +21,7 @@ import (
 )
 
 func main() {
-	log.Println("🕐 Starting Pharmonico Scheduler...")
+	log.Println("🕐 Starting PhilMyMeds Scheduler...")
 	log.Println("ℹ️  Note: This scheduler is for maintenance tasks, NOT job queue polling")
 	log.Println("ℹ️  All worker processing uses Kafka event-driven architecture")
 
